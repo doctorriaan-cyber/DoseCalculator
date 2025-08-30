@@ -91,14 +91,6 @@
         max-width: 520px;
       }
 
-      .edit-mode-toggle-container {
-        width: 100%;
-        max-width: 520px;
-        display: flex;
-        justify-content: flex-start;
-        margin-bottom: 1rem;
-      }
-
       .patient-info-container {
         width: 100%;
         background-color: var(--card-background);
@@ -106,6 +98,7 @@
         box-shadow: 0 4px 20px var(--shadow-color);
         padding: 1.5rem 2rem;
         margin-bottom: 1rem;
+        margin-top: 1rem;
         display: flex;
         flex-direction: column;
         gap: 1.5rem;
@@ -371,10 +364,10 @@
           padding: 0 1.5rem 1.5rem 1.5rem;
       }
 
-      .theme-toggle-button {
+      .theme-toggle-button,
+      .edit-mode-toggle-button {
           position: fixed;
           top: 1rem;
-          right: 1rem;
           z-index: 100;
           background: none;
           border: none;
@@ -387,15 +380,35 @@
           justify-content: center;
           transition: background-color 0.2s, color 0.2s;
       }
-      .theme-toggle-button:hover {
+      .theme-toggle-button {
+          right: 1rem;
+      }
+      .edit-mode-toggle-button {
+          left: 1rem;
+      }
+
+      .theme-toggle-button:hover,
+      .edit-mode-toggle-button:hover {
           background-color: color-mix(in srgb, var(--label-color) 15%, transparent);
           color: var(--text-color);
       }
-      .theme-toggle-button:focus-visible {
+
+      .theme-toggle-button:focus-visible,
+      .edit-mode-toggle-button:focus-visible {
           outline: 2px solid var(--primary-color);
           outline-offset: 2px;
       }
 
+      .edit-mode-toggle-button.active {
+        color: var(--primary-color);
+      }
+      .edit-mode-toggle-button.active:hover {
+        background-color: color-mix(in srgb, var(--primary-color) 15%, transparent);
+      }
+      .edit-mode-toggle-button svg {
+        width: 24px;
+        height: 24px;
+      }
 
       .calculator-grid {
           display: flex;
@@ -1628,19 +1641,20 @@
                 {isDarkMode ? <SunIcon /> : <MoonIcon />}
             </button>
 
+            <button
+                className={`edit-mode-toggle-button ${isEditMode ? 'active' : ''}`}
+                onClick={() => setIsEditMode(!isEditMode)}
+                title={isEditMode ? 'Disable edit mode' : 'Enable edit mode'}
+                aria-label="Toggle edit mode"
+            >
+                <PencilIcon />
+            </button>
+
             <header className="main-header">
               <h1>Anaesthesia Calculator</h1>
             </header>
             
             <div className="app-wrapper">
-              <div className="edit-mode-toggle-container">
-                  <div className="toggle-switch">
-                      <input type="checkbox" id="edit-mode-toggle" checked={isEditMode} onChange={(e) => setIsEditMode(e.target.checked)} className="toggle-checkbox" />
-                      <label htmlFor="edit-mode-toggle" className="toggle-label"><span className="sr-only">Toggle Edit Mode</span></label>
-                      <span className="toggle-text">Edit Mode</span>
-                  </div>
-              </div>
-            
               <div className="patient-info-container">
                 <div className="info-section">
                   <label htmlFor="age-display">Age</label>
