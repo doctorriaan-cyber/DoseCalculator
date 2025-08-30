@@ -4,7 +4,6 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Anaesthesia Calculator</title>
-    <link rel="icon" type="image/png" sizes="192x192" href="cropped.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -664,6 +663,46 @@
           color: var(--danger-color);
       }
 
+      /* Reorder Controls */
+      .reorder-controls {
+          display: flex;
+          align-items: center;
+      }
+      .collapsible-header .reorder-controls {
+          margin-right: 0.5rem;
+          margin-left: -0.5rem; /* Match old drag handle alignment */
+      }
+      .item-row .reorder-controls {
+          margin-right: 0.5rem;
+      }
+      .reorder-controls.vertical {
+          flex-direction: column;
+          justify-content: center;
+          gap: 0.1rem;
+      }
+      .reorder-controls .icon-button {
+          padding: 0.4rem;
+      }
+      .reorder-controls .icon-button svg {
+          width: 20px;
+          height: 20px;
+      }
+      .reorder-controls.vertical .icon-button {
+          padding: 0.2rem;
+      }
+      .reorder-controls.vertical .icon-button svg {
+          width: 16px;
+          height: 16px;
+      }
+      .reorder-controls .icon-button:disabled {
+          opacity: 0.2;
+          cursor: not-allowed;
+      }
+      .reorder-controls .icon-button:disabled:hover {
+          background-color: transparent;
+          color: var(--label-color);
+      }
+
 
       /* Modal Styles */
       .range-input-container {
@@ -797,40 +836,7 @@
           outline: none;
           box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary-color) 40%, transparent);
       }
-
-      /* Drag and Drop Styles */
-      .drag-handle {
-          cursor: grab;
-          color: var(--label-color);
-          padding: 0.5rem;
-          margin-left: -0.5rem;
-          opacity: 0.6;
-          transition: opacity 0.2s, color 0.2s;
-      }
-      .drag-handle:hover {
-          opacity: 1;
-          color: var(--text-color);
-      }
-      [data-draggable-id] {
-          transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1);
-      }
-      .dragging-source {
-          opacity: 0.4;
-          background-color: var(--disabled-bg-color);
-      }
-      .dragging-source * {
-        pointer-events: none;
-      }
-      .dragging-clone {
-          box-shadow: 0 10px 30px var(--shadow-color);
-          transform: scale(1.03);
-          transition: transform 0.1s ease;
-      }
-      body.is-dragging {
-          cursor: grabbing;
-          user-select: none;
-      }
-
+      
       /* Favourites Section Motif */
       .favourites-section .collapsible-header {
           background-color: var(--primary-color);
@@ -978,12 +984,13 @@
         const PencilIcon = () => (
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
         );
+        
+        const ArrowUpIcon = () => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
+        );
 
-        const DragHandleIcon = () => (
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="9" cy="12" r="1"></circle><circle cx="9" cy="5" r="1"></circle><circle cx="9" cy="19" r="1"></circle>
-                <circle cx="15" cy="12" r="1"></circle><circle cx="15" cy="5" r="1"></circle><circle cx="15" cy="19" r="1"></circle>
-            </svg>
+        const ArrowDownIcon = () => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>
         );
 
         // --- MODAL COMPONENTS ---
@@ -1257,7 +1264,6 @@
         const [itemToDelete, setItemToDelete] = useState(null);
         const [sectionToEdit, setSectionToEdit] = useState(null);
         const [itemToEdit, setItemToEdit] = useState(null);
-        const [draggingState, setDraggingState] = useState(null);
 
         // --- PERSISTENCE EFFECT ---
         useEffect(() => {
@@ -1491,7 +1497,7 @@
           setMode(e.target.value);
         };
         
-          const confirmModalInfo = useMemo(() => {
+        const confirmModalInfo = useMemo(() => {
           if (!itemToDelete) return { title: '', message: '' };
           if (itemToDelete.type === 'section') {
             return {
@@ -1505,123 +1511,49 @@
           };
         }, [itemToDelete]);
 
-        const handleMouseDown = (e, type, id, sectionId) => {
-          if (e.button !== 0 || !isEditMode) return;
-          e.preventDefault();
+        const handleMoveSection = (sectionId, direction) => {
+            setSections(prevSections => {
+                const index = prevSections.findIndex(s => s.id === sectionId);
+                if (index === -1) return prevSections;
 
-          const element = e.currentTarget.closest('[data-draggable-id]');
-          if (!element) return;
+                const newIndex = direction === 'up' ? index - 1 : index + 1;
+                if (newIndex < 0 || newIndex >= prevSections.length) return prevSections;
 
-          const rect = element.getBoundingClientRect();
-          const clone = element.cloneNode(true);
-
-          const offsetX = e.clientX - rect.left;
-          const offsetY = e.clientY - rect.top;
-
-          clone.style.position = 'fixed';
-          clone.style.top = `${rect.top}px`;
-          clone.style.left = `${rect.left}px`;
-          clone.style.width = `${rect.width}px`;
-          clone.style.zIndex = '2000';
-          clone.style.pointerEvents = 'none';
-          clone.classList.add('dragging-clone');
-          document.body.appendChild(clone);
-
-          element.classList.add('dragging-source');
-          document.body.classList.add('is-dragging');
-
-          setDraggingState({ type, id, sectionId, clone, element, offsetX, offsetY });
+                const newSections = [...prevSections];
+                const [movedSection] = newSections.splice(index, 1);
+                newSections.splice(newIndex, 0, movedSection);
+                return newSections;
+            });
         };
 
-        useEffect(() => {
-          let lastOverId = null;
+        const handleMoveItem = (sectionId, itemId, direction) => {
+            setSections(prevSections => {
+                const sectionIndex = prevSections.findIndex(s => s.id === sectionId);
+                if (sectionIndex === -1) return prevSections;
+                
+                const section = prevSections[sectionIndex];
+                const itemIndex = section.items.findIndex(i => i.id === itemId);
+                if (itemIndex === -1) return prevSections;
+                
+                const newItemIndex = direction === 'up' ? itemIndex - 1 : itemIndex + 1;
+                if (newItemIndex < 0 || newItemIndex >= section.items.length) return prevSections;
 
-          const handleMouseMove = (e) => {
-              if (!draggingState) return;
+                const newItems = [...section.items];
+                const [movedItem] = newItems.splice(itemIndex, 1);
+                newItems.splice(newItemIndex, 0, movedItem);
 
-              draggingState.clone.style.left = `${e.clientX - draggingState.offsetX}px`;
-              draggingState.clone.style.top = `${e.clientY - draggingState.offsetY}px`;
-              
-              const parentContainer = draggingState.element.parentElement;
-              if (!parentContainer) return;
+                const newSections = [...prevSections];
+                newSections[sectionIndex] = { ...section, items: newItems };
+                return newSections;
+            });
+        };
 
-              const draggables = Array.from(
-                  parentContainer.querySelectorAll('[data-draggable-id]')
-              );
-
-              const overElement = draggables.find(child => {
-                  if (child === draggingState.element) return false;
-                  const rect = child.getBoundingClientRect();
-                  return e.clientY >= rect.top && e.clientY <= rect.bottom;
-              });
-
-              if (overElement) {
-                  const overId = Number(overElement.dataset.draggableId);
-
-                  if (overId === lastOverId) return;
-                  lastOverId = overId;
-                  
-                  const sourceId = draggingState.id;
-                  if (overId === sourceId) return;
-
-                  setSections(currentSections => {
-                      const newSections = JSON.parse(JSON.stringify(currentSections));
-                      
-                      if (draggingState.type === 'section') {
-                          const sourceIndex = newSections.findIndex((s) => s.id === sourceId);
-                          const destIndex = newSections.findIndex((s) => s.id === overId);
-                          if (sourceIndex === -1 || destIndex === -1) return currentSections;
-                          
-                          const [movedSection] = newSections.splice(sourceIndex, 1);
-                          newSections.splice(destIndex, 0, movedSection);
-                          
-                      } else if (draggingState.type === 'item' && draggingState.sectionId) {
-                          const section = newSections.find((s) => s.id === draggingState.sectionId);
-                          if (!section) return currentSections;
-                          
-                          const sourceIndex = section.items.findIndex((i) => i.id === sourceId);
-                          const destIndex = section.items.findIndex((i) => i.id === overId);
-                          if (sourceIndex === -1 || destIndex === -1) return currentSections;
-
-                          const [movedItem] = section.items.splice(sourceIndex, 1);
-                          section.items.splice(destIndex, 0, movedItem);
-                      }
-                      return newSections;
-                  });
-              } else {
-                  lastOverId = null;
-              }
-          };
-
-          const handleMouseUp = () => {
-              if (!draggingState) return;
-              
-              document.body.classList.remove('is-dragging');
-              document.body.removeChild(draggingState.clone);
-              draggingState.element.classList.remove('dragging-source');
-              
-              setDraggingState(null);
-          };
-
-          if (draggingState) {
-              window.addEventListener('mousemove', handleMouseMove);
-              window.addEventListener('mouseup', handleMouseUp, { once: true });
-          }
-
-          return () => {
-              window.removeEventListener('mousemove', handleMouseMove);
-              window.removeEventListener('mouseup', handleMouseUp);
-              if (draggingState?.clone?.parentElement) {
-                  document.body.removeChild(draggingState.clone);
-              }
-          };
-        }, [draggingState, setSections]);
-
-        const renderItem = (item, sectionId) => {
+        const renderItem = (item, sectionId, index, totalItems) => {
           const minDose = weight * item.minRange;
           const maxDose = weight * item.maxRange;
           const unitLabel = item.unit.split('/')[0];
           const isSingleValue = item.minRange === item.maxRange;
+          const isReorderable = index !== undefined && totalItems !== undefined;
 
           const rangeDisplay = isSingleValue
               ? `${item.maxRange} ${item.unit}`
@@ -1635,11 +1567,27 @@
               <div 
                   key={item.id} 
                   className="item-row"
-                  data-draggable-id={item.id}
               >
-                  {isEditMode && (
-                      <div className="drag-handle" onMouseDown={(e) => handleMouseDown(e, 'item', item.id, sectionId)}>
-                          <DragHandleIcon />
+                  {isEditMode && isReorderable && (
+                      <div className="reorder-controls vertical">
+                          <button
+                              className="icon-button"
+                              onClick={() => handleMoveItem(sectionId, item.id, 'up')}
+                              disabled={index === 0}
+                              title="Move item up"
+                              aria-label="Move item up"
+                          >
+                              <ArrowUpIcon />
+                          </button>
+                          <button
+                              className="icon-button"
+                              onClick={() => handleMoveItem(sectionId, item.id, 'down')}
+                              disabled={index === totalItems - 1}
+                              title="Move item down"
+                              aria-label="Move item down"
+                          >
+                              <ArrowDownIcon />
+                          </button>
                       </div>
                   )}
                   <div className="item-content">
@@ -1855,18 +1803,34 @@
                 </div>
             )}
 
-            {sections.map(section => {
+            {sections.map((section, index) => {
                 const hasItems = section.items.length > 0;
                 return (
                     <div
                         key={section.id} 
                         className="calculator-container custom-section"
-                        data-draggable-id={section.id}
                     >
                         <div className="collapsible-header" >
                             {isEditMode && (
-                                <div className="drag-handle" onMouseDown={(e) => handleMouseDown(e, 'section', section.id)}>
-                                    <DragHandleIcon />
+                                <div className="reorder-controls">
+                                    <button
+                                        className="icon-button"
+                                        onClick={() => handleMoveSection(section.id, 'up')}
+                                        disabled={index === 0}
+                                        title="Move section up"
+                                        aria-label="Move section up"
+                                    >
+                                        <ArrowUpIcon />
+                                    </button>
+                                    <button
+                                        className="icon-button"
+                                        onClick={() => handleMoveSection(section.id, 'down')}
+                                        disabled={index === sections.length - 1}
+                                        title="Move section down"
+                                        aria-label="Move section down"
+                                    >
+                                        <ArrowDownIcon />
+                                    </button>
                                 </div>
                             )}
                             <div className="header-title" onClick={() => handleToggleSection(section.id)}>
@@ -1893,7 +1857,7 @@
                               <div className="custom-section-content">
                                   {hasItems && (
                                       <div className="item-list">
-                                          {section.items.map(item => renderItem(item, section.id))}
+                                          {section.items.map((item, itemIndex) => renderItem(item, section.id, itemIndex, section.items.length))}
                                       </div>
                                   )}
                                   {isEditMode && (
@@ -2001,4 +1965,3 @@
     </script>
   </body>
 </html>
-
