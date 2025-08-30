@@ -1,0 +1,1787 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Anaesthesia Calculator</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+      :root {
+        --primary-color: #007bff;
+        --primary-color-hover: #0056b3;
+        --background-color: #f0f2f5;
+        --card-background: #ffffff;
+        --text-color: #212529;
+        --label-color: #5a6268;
+        --border-color: #d1d9e0;
+        --disabled-bg-color: #e9ecef;
+        --disabled-text-color: #868e96;
+        --shadow-color: rgba(0, 0, 0, 0.08);
+        --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        --danger-color: #dc3545;
+        --danger-color-hover: #c82333;
+      }
+
+      body.dark-mode {
+        --primary-color: #3f9eff;
+        --primary-color-hover: #006fe6;
+        --background-color: #121212;
+        --card-background: #1e1e1e;
+        --text-color: #e0e0e0;
+        --label-color: #a0a0a0;
+        --border-color: #444;
+        --disabled-bg-color: #2a2a2a;
+        --disabled-text-color: #888;
+        --shadow-color: rgba(0, 0, 0, 0.2);
+        --danger-color: #e06c75;
+        --danger-color-hover: #d94753;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      html, body {
+        min-height: 100%;
+      }
+
+      body {
+        font-family: var(--font-family);
+        background-color: var(--background-color);
+        color: var(--text-color);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 2rem 1rem;
+        transition: background-color 0.3s ease, color 0.3s ease;
+      }
+
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border-width: 0;
+      }
+
+      .main-header {
+        width: 100%;
+        max-width: 520px;
+        text-align: center;
+        margin-bottom: 1.5rem;
+      }
+
+      .main-header h1 {
+        font-size: 2.25rem;
+        font-weight: 700;
+        color: var(--text-color);
+        transition: color 0.3s ease;
+      }
+
+      .app-wrapper {
+        width: 100%;
+        max-width: 520px;
+      }
+
+      .edit-mode-toggle-container {
+        width: 100%;
+        max-width: 520px;
+        display: flex;
+        justify-content: flex-start;
+        margin-bottom: 1rem;
+      }
+
+      .patient-info-container {
+        width: 100%;
+        background-color: var(--card-background);
+        border-radius: 12px;
+        box-shadow: 0 4px 20px var(--shadow-color);
+        padding: 1.5rem 2rem;
+        margin-bottom: 1rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+        transition: all 0.3s ease-in-out;
+      }
+
+      .info-section > label {
+        font-weight: 600;
+        font-size: 1.1rem;
+        color: var(--text-color);
+        margin-bottom: 0.75rem;
+        display: block;
+      }
+
+      .stepper-control {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background-color: var(--disabled-bg-color);
+        border-radius: 8px;
+        padding: 0.5rem;
+      }
+      .stepper-control button {
+        width: 40px;
+        height: 40px;
+        border-radius: 6px;
+        border: none;
+        background-color: var(--card-background);
+        color: var(--primary-color);
+        font-size: 1.5rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background-color 0.2s;
+      }
+      .stepper-control button:hover:not(:disabled) {
+        background-color: color-mix(in srgb, var(--primary-color) 10%, var(--card-background));
+      }
+      .stepper-control button:disabled {
+        color: var(--disabled-text-color);
+        cursor: not-allowed;
+      }
+      .stepper-control span {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--text-color);
+        min-width: 80px;
+        text-align: center;
+      }
+
+      .weight-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+      }
+
+      .weight-label-container {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+      }
+
+      .weight-label-container > label {
+        font-weight: 600;
+        font-size: 1.1rem;
+        color: var(--text-color);
+      }
+
+      .weight-value-button {
+          background: none;
+          border: none;
+          color: var(--text-color);
+          font-size: 1.25rem;
+          font-weight: 600;
+          cursor: pointer;
+          padding: 0.25rem 0.5rem;
+          margin-left: -0.5rem;
+          border-radius: 6px;
+          transition: background-color 0.2s;
+      }
+      .weight-value-button:hover {
+          background-color: var(--disabled-bg-color);
+      }
+
+      .weight-slider {
+        width: 100%;
+        -webkit-appearance: none;
+        appearance: none;
+        height: 8px;
+        background: var(--disabled-bg-color);
+        border-radius: 5px;
+        outline: none;
+        transition: opacity 0.2s;
+      }
+      .weight-slider:disabled {
+        opacity: 0.5;
+      }
+      .weight-slider::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 20px;
+        height: 20px;
+        background: var(--primary-color);
+        cursor: pointer;
+        border-radius: 50%;
+        transition: background-color 0.2s;
+      }
+      .weight-slider::-moz-range-thumb {
+        width: 20px;
+        height: 20px;
+        background: var(--primary-color);
+        cursor: pointer;
+        border-radius: 50%;
+        border: none;
+        transition: background-color 0.2s;
+      }
+      .weight-slider:hover::-webkit-slider-thumb {
+          background: var(--primary-color-hover);
+      }
+      .weight-slider:hover::-moz-range-thumb {
+          background: var(--primary-color-hover);
+      }
+
+      .toggle-switch {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      .toggle-text {
+        color: var(--label-color);
+        font-size: 0.9rem;
+        font-weight: 500;
+        cursor: pointer;
+      }
+      .toggle-checkbox {
+        display: none;
+      }
+      .toggle-label {
+        cursor: pointer;
+        width: 40px;
+        height: 22px;
+        background: var(--disabled-bg-color);
+        display: block;
+        border-radius: 100px;
+        position: relative;
+      }
+      .toggle-label:after {
+        content: '';
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        width: 18px;
+        height: 18px;
+        background: #fff;
+        border-radius: 90px;
+        transition: 0.3s;
+      }
+      .toggle-checkbox:checked + .toggle-label {
+        background: var(--primary-color);
+      }
+      .toggle-checkbox:checked + .toggle-label:after {
+        left: calc(100% - 2px);
+        transform: translateX(-100%);
+      }
+
+      .add-section-container {
+          padding: 0.5rem 0 1rem;
+      }
+      .add-section-button {
+          width: 100%;
+          padding: 0.75rem;
+          border: 1px dashed var(--border-color);
+          background-color: color-mix(in srgb, var(--card-background) 50%, transparent);
+          color: var(--label-color);
+          border-radius: 8px;
+          font-size: 1rem;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s;
+      }
+      .add-section-button:hover {
+          border-color: var(--primary-color);
+          color: var(--primary-color);
+          background-color: color-mix(in srgb, var(--primary-color) 10%, transparent);
+      }
+
+      .custom-section {
+          margin-bottom: 1.5rem;
+      }
+
+      .calculator-container {
+        width: 100%;
+        background-color: var(--card-background);
+        border-radius: 12px;
+        box-shadow: 0 4px 20px var(--shadow-color);
+        transition: all 0.3s ease-in-out;
+        margin-bottom: 1.5rem;
+      }
+      .calculator-container:last-child {
+        margin-bottom: 0;
+      }
+
+      .collapsible-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        -webkit-tap-highlight-color: transparent;
+        padding: 1.5rem;
+        border-radius: 12px;
+        transition: border-radius 0.1s linear 0.3s;
+      }
+
+      .collapsible-header:has(+ .collapsible-content.open) {
+          border-bottom-left-radius: 0;
+          border-bottom-right-radius: 0;
+          transition: border-radius 0.1s linear;
+      }
+
+      .header-title {
+        flex-grow: 1;
+        cursor: pointer;
+      }
+
+      .collapsible-header h1 {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: var(--text-color);
+        margin: 0;
+      }
+
+      .header-actions {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      .header-actions > [role="button"] {
+          cursor: pointer;
+      }
+
+      .chevron-icon {
+        color: var(--label-color);
+        transition: transform 0.3s ease;
+      }
+
+      .chevron-icon.open {
+        transform: rotate(180deg);
+      }
+
+      .collapsible-content {
+        display: grid;
+        grid-template-rows: 0fr;
+        transition: grid-template-rows 0.4s ease-in-out;
+      }
+      .collapsible-content.open {
+        grid-template-rows: 1fr;
+      }
+      .collapsible-content > div {
+        overflow: hidden;
+      }
+
+      .collapsible-content > div > .calculator-grid {
+        padding: 0 1.5rem 1.5rem 1.5rem;
+      }
+
+      .theme-toggle-button {
+          position: fixed;
+          top: 1rem;
+          right: 1rem;
+          z-index: 100;
+          background: none;
+          border: none;
+          cursor: pointer;
+          color: var(--label-color);
+          padding: 0.5rem;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: background-color 0.2s, color 0.2s;
+      }
+      .theme-toggle-button:hover {
+          background-color: color-mix(in srgb, var(--label-color) 15%, transparent);
+          color: var(--text-color);
+      }
+      .theme-toggle-button:focus-visible {
+          outline: 2px solid var(--primary-color);
+          outline-offset: 2px;
+      }
+
+
+      .calculator-grid {
+          display: flex;
+          flex-direction: column;
+          gap: 1.5rem;
+          padding-top: 1.5rem;
+      }
+
+      .calculator-row {
+          display: flex;
+          align-items: flex-end;
+          gap: 1rem;
+      }
+
+      .radio-control {
+          flex-shrink: 0;
+          width: 48px;
+          height: 48px;
+      }
+      .radio-control input[type="radio"] {
+          display: none;
+      }
+      .radio-control label {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 100%;
+          height: 100%;
+          border-radius: 8px;
+          border: 1px solid var(--border-color);
+          cursor: pointer;
+          transition: background-color 0.2s, border-color 0.2s;
+      }
+      .radio-control label::before {
+          content: '';
+          display: block;
+          width: 20px;
+          height: 20px;
+          border-radius: 50%;
+          border: 2px solid var(--border-color);
+          transition: border-color 0.2s, background-color 0.2s;
+      }
+      .radio-control input[type="radio"]:checked + label {
+          border-color: var(--primary-color);
+          background-color: color-mix(in srgb, var(--primary-color) 10%, transparent);
+      }
+      .radio-control input[type="radio"]:checked + label::before {
+          border-color: var(--primary-color);
+          background-color: var(--primary-color);
+          background-image: url('data:image/svg+xml,<svg viewBox="0 0 16 16" fill="white" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="8" r="3.5"/></svg>');
+          background-position: center;
+          background-repeat: no-repeat;
+      }
+      .radio-control input[type="radio"]:focus-visible + label {
+          box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary-color) 25%, transparent);
+      }
+
+
+      .input-group {
+        width: 100%;
+      }
+
+      .input-group label {
+        display: block;
+        font-weight: 500;
+        margin-bottom: 0.5rem;
+        color: var(--label-color);
+      }
+
+      .input-field {
+        display: flex;
+        align-items: center;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        transition: border-color 0.2s, box-shadow 0.2s;
+        overflow: hidden;
+      }
+
+      .input-field:focus-within {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary-color) 25%, transparent);
+      }
+
+      .input-field input, .input-field select {
+        border: none;
+        background: transparent;
+        outline: none;
+        font-family: var(--font-family);
+        font-size: 1rem;
+        height: 46px;
+      }
+
+      .input-field input {
+        flex-grow: 1;
+        padding: 0.75rem 1rem;
+        width: 100%;
+        color: var(--text-color);
+      }
+
+      .input-field input:disabled {
+        background-color: var(--disabled-bg-color);
+        color: var(--disabled-text-color);
+        cursor: not-allowed;
+      }
+
+
+      /* Hide number input arrows */
+      input[type=number]::-webkit-inner-spin-button, 
+      input[type=number]::-webkit-outer-spin-button { 
+        -webkit-appearance: none; 
+        margin: 0; 
+      }
+      input[type=number] {
+        -moz-appearance: textfield;
+      }
+
+      .input-field .unit-display,
+      .input-field select {
+        padding: 0.75rem 1rem;
+        background-color: #f8f9fa;
+        border-left: 1px solid var(--border-color);
+        color: var(--label-color);
+        font-weight: 500;
+      }
+      body.dark-mode .input-field .unit-display,
+      body.dark-mode .input-field select {
+        background-color: #2c2c2c;
+      }
+
+      .input-field select {
+          cursor: pointer;
+      }
+      .input-field select:disabled {
+          cursor: not-allowed;
+      }
+
+      /* Custom Section Content */
+      .custom-section-content {
+          padding: 0 1.5rem 1.5rem 1.5rem;
+      }
+      .item-list {
+          display: flex;
+          flex-direction: column;
+          gap: 1rem;
+          padding-top: 1.5rem;
+      }
+      .item-row {
+          padding: 1rem;
+          background-color: var(--disabled-bg-color);
+          border-radius: 8px;
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+      }
+      .item-content {
+          flex-grow: 1;
+      }
+      .item-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 0.5rem;
+      }
+      .item-name {
+          font-weight: 600;
+          font-size: 1.1rem;
+          color: var(--text-color);
+      }
+      .item-actions {
+          display: flex;
+          align-items: center;
+          gap: 0.25rem;
+      }
+      .item-details {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 0.75rem;
+          flex-wrap: wrap;
+      }
+      .item-range {
+          color: var(--label-color);
+          font-size: 0.9rem;
+      }
+      .item-dose {
+          font-weight: 600;
+          color: var(--primary-color);
+          font-size: 1.1rem;
+          background-color: color-mix(in srgb, var(--primary-color) 10%, transparent);
+          padding: 0.25rem 0.6rem;
+          border-radius: 6px;
+      }
+      .item-arrow {
+          color: var(--label-color);
+          font-weight: bold;
+      }
+
+      .add-item-container {
+          margin-top: 1.5rem;
+      }
+      .add-item-button {
+          width: 100%;
+          padding: 0.6rem;
+          border: 1px solid var(--border-color);
+          background-color: transparent;
+          color: var(--label-color);
+          border-radius: 8px;
+          font-size: 0.9rem;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s;
+      }
+      .add-item-button:hover {
+          border-color: var(--primary-color);
+          color: var(--primary-color);
+          background-color: color-mix(in srgb, var(--primary-color) 10%, transparent);
+      }
+
+      .icon-button {
+          background: none;
+          border: none;
+          cursor: pointer;
+          color: var(--label-color);
+          padding: 0.5rem;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: background-color 0.2s, color 0.2s;
+      }
+      .icon-button:hover {
+          background-color: color-mix(in srgb, var(--label-color) 15%, transparent);
+          color: var(--text-color);
+      }
+      .icon-button svg {
+          transition: color 0.2s;
+      }
+
+      .header-actions .icon-button:nth-of-type(1):hover, /* Section Edit */
+      .item-actions .icon-button:nth-of-type(1):hover { /* Item Edit */
+          color: var(--primary-color);
+      }
+
+      .item-actions .icon-button:nth-of-type(2):hover { /* Heart */
+          color: var(--danger-color);
+      }
+
+      .header-actions .icon-button:nth-of-type(2):hover, /* Section Delete */
+      .item-actions .icon-button:nth-of-type(3):hover { /* Item Delete */
+          color: var(--danger-color);
+      }
+
+
+      .icon-button [data-favourite="true"] {
+          color: var(--danger-color);
+      }
+
+
+      /* Modal Styles */
+      .range-input-container {
+          display: flex;
+          gap: 0.5rem;
+      }
+      .range-input-container .input-field {
+          flex: 1;
+      }
+      .range-unit-selector {
+          border: 1px solid var(--border-color);
+          border-radius: 8px;
+          background-color: var(--card-background);
+          color: var(--text-color);
+          padding: 0 1rem;
+          font-family: var(--font-family);
+          font-size: 1rem;
+          height: 48px;
+          outline: none;
+          cursor: pointer;
+      }
+      .range-unit-selector:focus {
+          border-color: var(--primary-color);
+          box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary-color) 25%, transparent);
+      }
+
+      .modal-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background-color: rgba(0, 0, 0, 0.6);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 1000;
+          -webkit-backdrop-filter: blur(5px);
+          backdrop-filter: blur(5px);
+          animation: fadeIn 0.3s ease;
+      }
+
+      @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+      }
+
+      .modal-content {
+          background-color: var(--card-background);
+          padding: 2rem;
+          border-radius: 12px;
+          box-shadow: 0 10px 30px var(--shadow-color);
+          width: 90%;
+          max-width: 400px;
+          animation: slideIn 0.3s ease-out;
+          display: flex;
+          flex-direction: column;
+          gap: 1.5rem;
+      }
+
+      @keyframes slideIn {
+          from { transform: translateY(-20px) scale(0.98); opacity: 0; }
+          to { transform: translateY(0) scale(1); opacity: 1; }
+      }
+
+      .modal-content h2 {
+          font-size: 1.5rem;
+          font-weight: 600;
+          color: var(--text-color);
+          margin: 0;
+      }
+
+      .modal-message {
+          color: var(--label-color);
+          line-height: 1.6;
+          margin-bottom: 0.5rem;
+          margin-top: -1rem;
+      }
+
+      .modal-actions {
+          display: flex;
+          justify-content: flex-end;
+          gap: 0.75rem;
+          margin-top: 0.5rem;
+      }
+
+      .modal-button {
+          padding: 0.6rem 1.2rem;
+          border: none;
+          border-radius: 8px;
+          font-size: 1rem;
+          font-weight: 600;
+          cursor: pointer;
+          transition: background-color 0.2s, color 0.2s, box-shadow 0.2s, opacity 0.2s;
+          background-color: var(--disabled-bg-color);
+          color: var(--text-color);
+      }
+      .modal-button:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+      }
+
+      .modal-button:hover:not(:disabled) {
+          background-color: color-mix(in srgb, var(--label-color) 20%, transparent);
+      }
+
+      .modal-button.primary {
+          background-color: var(--primary-color);
+          color: white;
+      }
+      body.dark-mode .modal-button.primary {
+          color: var(--background-color);
+      }
+
+      .modal-button.primary:hover:not(:disabled) {
+          background-color: var(--primary-color-hover);
+      }
+
+      .modal-button.danger {
+          background-color: var(--danger-color);
+          color: white;
+      }
+      body.dark-mode .modal-button.danger {
+          color: var(--background-color);
+      }
+      .modal-button.danger:hover:not(:disabled) {
+          background-color: var(--danger-color-hover);
+      }
+
+      .modal-button:focus-visible {
+          outline: none;
+          box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary-color) 40%, transparent);
+      }
+
+      /* Drag and Drop Styles */
+      .drag-handle {
+          cursor: grab;
+          color: var(--label-color);
+          padding: 0.5rem;
+          margin-left: -0.5rem;
+          opacity: 0.6;
+          transition: opacity 0.2s, color 0.2s;
+      }
+      .drag-handle:hover {
+          opacity: 1;
+          color: var(--text-color);
+      }
+      [data-draggable-id] {
+          transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1);
+      }
+      .dragging-source {
+          opacity: 0.4;
+          background-color: var(--disabled-bg-color);
+      }
+      .dragging-source * {
+        pointer-events: none;
+      }
+      .dragging-clone {
+          box-shadow: 0 10px 30px var(--shadow-color);
+          transform: scale(1.03);
+          transition: transform 0.1s ease;
+      }
+      body.is-dragging {
+          cursor: grabbing;
+          user-select: none;
+      }
+
+      /* Favourites Section Motif */
+      .favourites-section .collapsible-header {
+          background-color: var(--primary-color);
+          transition: background-color 0.3s ease, border-radius 0.3s ease;
+      }
+
+      .favourites-section .collapsible-header h1,
+      .favourites-section .chevron-icon {
+          color: white;
+      }
+
+      body.dark-mode .favourites-section .collapsible-header h1,
+      body.dark-mode .favourites-section .chevron-icon {
+          color: var(--background-color);
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react/": "https://aistudiocdn.com/react@^19.1.1/",
+    "react": "https://aistudiocdn.com/react@^19.1.1",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.1.1/"
+  }
+}
+</script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+  <body>
+    <div id="root"></div>
+    <script type="text/babel" data-type="module">
+      import React, { useState, useMemo, useEffect, useRef } from 'react';
+      import ReactDOM from 'react-dom/client';
+
+      const App = () => {
+        // --- TYPE DEFINITIONS ---
+        type Mode = 'amount' | 'volume' | 'concentration';
+        type Unit = 'g' | 'mg' | 'µg' | 'ng';
+        type ItemUnit = 'mg/kg' | 'µg/kg' | 'ml/kg';
+        
+        interface Item {
+          id: number;
+          name: string;
+          minRange: number;
+          maxRange: number;
+          unit: ItemUnit;
+          isFavourite: boolean;
+        }
+        interface Section {
+          id: number;
+          name: string;
+          isOpen: boolean;
+          items: Item[];
+        }
+
+        // --- ICONS ---
+        const SunIcon = () => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+        );
+
+        const MoonIcon = () => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+        );
+
+        const ChevronIcon = ({ isOpen }) => (
+            <svg className={`chevron-icon ${isOpen ? 'open' : ''}`} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        );
+
+        const TrashIcon = () => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+        );
+
+        const HeartIcon = ({ isFavourite }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill={isFavourite ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+        );
+
+        const PencilIcon = () => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+        );
+
+        const DragHandleIcon = () => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="9" cy="12" r="1"></circle><circle cx="9" cy="5" r="1"></circle><circle cx="9" cy="19" r="1"></circle>
+                <circle cx="15" cy="12" r="1"></circle><circle cx="15" cy="5" r="1"></circle><circle cx="15" cy="19" r="1"></circle>
+            </svg>
+        );
+
+        // --- MODAL COMPONENTS ---
+        const WeightModal = ({ isOpen, currentWeight, onClose, onSave }) => {
+            const [modalWeight, setModalWeight] = useState(String(currentWeight));
+            const inputRef = React.useRef(null);
+
+            useEffect(() => {
+                if (isOpen) {
+                    setModalWeight(String(currentWeight));
+                    setTimeout(() => inputRef.current?.focus(), 100);
+                }
+            }, [isOpen, currentWeight]);
+
+            const handleSave = () => {
+                const newWeight = parseFloat(modalWeight);
+                if (!isNaN(newWeight) && newWeight > 0) {
+                    onSave(newWeight);
+                }
+            };
+            
+            const handleKeyDown = (e) => {
+                if (e.key === 'Enter') {
+                    handleSave();
+                } else if (e.key === 'Escape') {
+                    onClose();
+                }
+            }
+
+            if (!isOpen) return null;
+
+            return (
+                <div className="modal-overlay" onClick={onClose} onKeyDown={handleKeyDown}>
+                    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                        <h2>Enter Weight</h2>
+                        <div className="input-group">
+                            <label htmlFor="manual-weight">Weight (kg)</label>
+                            <div className="input-field">
+                                <input
+                                    ref={inputRef}
+                                    id="manual-weight"
+                                    type="number"
+                                    value={modalWeight}
+                                    onChange={(e) => setModalWeight(e.target.value)}
+                                    placeholder="e.g., 24.5"
+                                    min="0"
+                                    step="0.1"
+                                />
+                            </div>
+                        </div>
+                        <div className="modal-actions">
+                            <button className="modal-button" onClick={onClose}>Cancel</button>
+                            <button className="modal-button primary" onClick={handleSave}>Save</button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const AddSectionModal = ({ isOpen, onClose, onSave, editingSection }) => {
+            const [name, setName] = useState('');
+            const inputRef = React.useRef(null);
+
+            useEffect(() => {
+                if (isOpen) {
+                    setName(editingSection ? editingSection.name : '');
+                    setTimeout(() => inputRef.current?.focus(), 100);
+                }
+            }, [isOpen, editingSection]);
+
+            const handleSave = () => {
+                if (name.trim()) {
+                    onSave(name.trim());
+                }
+            };
+
+            const handleKeyDown = (e) => {
+                if (e.key === 'Enter') handleSave();
+                else if (e.key === 'Escape') onClose();
+            }
+
+            if (!isOpen) return null;
+
+            return (
+                <div className="modal-overlay" onClick={onClose} onKeyDown={handleKeyDown}>
+                    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                        <h2>{editingSection ? 'Edit Section' : 'Add New Section'}</h2>
+                        <div className="input-group">
+                            <label htmlFor="section-name">Section Name</label>
+                            <div className="input-field">
+                                <input
+                                    ref={inputRef}
+                                    id="section-name"
+                                    type="text"
+                                    value={name}
+                                    onChange={(e) => setName(e.target.value)}
+                                    placeholder="e.g., Induction Agents"
+                                />
+                            </div>
+                        </div>
+                        <div className="modal-actions">
+                            <button className="modal-button" onClick={onClose}>Cancel</button>
+                            <button className="modal-button primary" onClick={handleSave} disabled={!name.trim()}>Save</button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const AddItemModal = ({ isOpen, onClose, onSave, editingItem }) => {
+            const [name, setName] = useState('');
+            const [min, setMin] = useState('');
+            const [max, setMax] = useState('');
+            const [unit, setUnit] = useState('mg/kg');
+            const inputRef = React.useRef(null);
+
+            useEffect(() => {
+                if (isOpen) {
+                    if (editingItem) {
+                        setName(editingItem.name);
+                        const minVal = editingItem.minRange;
+                        const maxVal = editingItem.maxRange;
+                        setMin(minVal === maxVal ? '' : String(minVal));
+                        setMax(String(maxVal));
+                        setUnit(editingItem.unit);
+                    } else {
+                        setName('');
+                        setMin('');
+                        setMax('');
+                        setUnit('mg/kg');
+                    }
+                    setTimeout(() => inputRef.current?.focus(), 100);
+                }
+            }, [isOpen, editingItem]);
+
+            const isValid = useMemo(() => {
+                const nameTrimmed = name.trim();
+                const maxRange = parseFloat(max);
+                const minRange = parseFloat(min);
+
+                if (!nameTrimmed || isNaN(maxRange)) {
+                    return false;
+                }
+
+                if (!isNaN(minRange) && minRange > maxRange) {
+                    return false;
+                }
+                
+                return true;
+            }, [name, min, max]);
+
+            const handleSave = () => {
+                if (!isValid) return;
+                
+                const maxRange = parseFloat(max);
+                let minRange = parseFloat(min);
+                
+                if (isNaN(minRange)) {
+                    minRange = maxRange;
+                }
+                
+                onSave({ name: name.trim(), minRange, maxRange, unit });
+            };
+
+            const handleKeyDown = (e) => {
+                if (e.key === 'Enter') handleSave();
+                else if (e.key === 'Escape') onClose();
+            }
+            
+            if (!isOpen) return null;
+
+            return (
+                <div className="modal-overlay" onClick={onClose} onKeyDown={handleKeyDown}>
+                    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                        <h2>{editingItem ? 'Edit Item' : 'Add New Item'}</h2>
+                        <div className="input-group">
+                            <label htmlFor="item-name">Name</label>
+                            <div className="input-field">
+                                <input
+                                    ref={inputRef}
+                                    id="item-name"
+                                    type="text"
+                                    value={name}
+                                    onChange={(e) => setName(e.target.value)}
+                                    placeholder="e.g., Propofol"
+                                />
+                            </div>
+                        </div>
+                        <div className="input-group">
+                            <label htmlFor="item-range-min">Range</label>
+                            <div className="range-input-container">
+                                <div className="input-field">
+                                    <input
+                                        id="item-range-min"
+                                        type="number"
+                                        value={min}
+                                        onChange={(e) => setMin(e.target.value)}
+                                        placeholder="Min (optional)"
+                                    />
+                                </div>
+                                <div className="input-field">
+                                    <input
+                                        type="number"
+                                        value={max}
+                                        onChange={(e) => setMax(e.target.value)}
+                                        placeholder="Max"
+                                    />
+                                </div>
+                                <select className="range-unit-selector" value={unit} onChange={(e) => setUnit(e.target.value)}>
+                                    <option value="mg/kg">mg/kg</option>
+                                    <option value="µg/kg">µg/kg</option>
+                                    <option value="ml/kg">ml/kg</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div className="modal-actions">
+                            <button className="modal-button" onClick={onClose}>Cancel</button>
+                            <button className="modal-button primary" onClick={handleSave} disabled={!isValid}>Save</button>
+                        </div>
+                    </div>
+                </div>
+            )
+        }
+
+        const ConfirmationModal = ({ isOpen, onClose, onConfirm, title, message }) => {
+            const handleKeyDown = (e) => {
+                if (e.key === 'Enter') onConfirm();
+                else if (e.key === 'Escape') onClose();
+            }
+            
+            if (!isOpen) return null;
+
+            return (
+                <div className="modal-overlay" onClick={onClose} onKeyDown={handleKeyDown}>
+                    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                        <h2>{title}</h2>
+                        <p className="modal-message">{message}</p>
+                        <div className="modal-actions">
+                            <button className="modal-button" onClick={onClose}>Cancel</button>
+                            <button className="modal-button danger" onClick={onConfirm}>Delete</button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+
+        // --- MAIN APP COMPONENT ---
+        const [mode, setMode] = useState('volume');
+        const [amount, setAmount] = useState('');
+        const [amountUnit, setAmountUnit] = useState('mg');
+        const [volume, setVolume] = useState('');
+        const [concentration, setConcentration] = useState('');
+        const [concentrationUnit, setConcentrationUnit] = useState('mg');
+        const [isDarkMode, setIsDarkMode] = useState(true);
+        const [isCalculatorOpen, setIsCalculatorOpen] = useState(false);
+
+        const [age, setAge] = useState(8);
+        const [weight, setWeight] = useState(24);
+        const [useAgeBasedWeight, setUseAgeBasedWeight] = useState(false);
+        const [isWeightModalOpen, setIsWeightModalOpen] = useState(false);
+
+        const [sections, setSections] = useState([]);
+        const [isAddSectionModalOpen, setIsAddSectionModalOpen] = useState(false);
+        const [isAddItemModalOpen, setIsAddItemModalOpen] = useState(false);
+        const [activeSectionId, setActiveSectionId] = useState(null);
+        const [isFavouritesOpen, setIsFavouritesOpen] = useState(true);
+        
+        const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+        const [itemToDelete, setItemToDelete] = useState(null);
+        
+        const [sectionToEdit, setSectionToEdit] = useState(null);
+        const [itemToEdit, setItemToEdit] = useState(null);
+        
+        const [isEditMode, setIsEditMode] = useState(false);
+
+        const [draggingState, setDraggingState] = useState(null);
+
+        useEffect(() => {
+          document.body.classList.toggle('dark-mode', isDarkMode);
+        }, [isDarkMode]);
+
+        const calculateWeightFromAge = (ageInYears) => {
+          if (ageInYears === 0) return 7; 
+          return Math.round(2 * (ageInYears + 4)); 
+        };
+
+        useEffect(() => {
+          if (useAgeBasedWeight) {
+              setWeight(calculateWeightFromAge(age));
+          }
+        }, [age, useAgeBasedWeight]);
+
+        const handleAgeChange = (increment) => {
+          setAge(prevAge => {
+              const newAge = prevAge + increment;
+              if (newAge >= 0 && newAge <= 14) {
+                  return newAge;
+              }
+              return prevAge;
+          });
+        };
+
+        const handleWeightChange = (e) => {
+            setWeight(Number(e.target.value));
+        };
+
+        const handleToggleAgeBasedWeight = (e) => {
+            const isChecked = e.target.checked;
+            setUseAgeBasedWeight(isChecked);
+            if (isChecked) {
+                setWeight(calculateWeightFromAge(age));
+            }
+        };
+        
+        const handleSaveWeight = (newWeight) => {
+            if (!isNaN(newWeight) && newWeight >= 1 && newWeight <= 150) {
+                setWeight(newWeight);
+                setUseAgeBasedWeight(false);
+                setIsWeightModalOpen(false);
+            }
+        };
+
+        const handleSaveSection = (name) => {
+          if (sectionToEdit) {
+              setSections(prev => prev.map(section => 
+                  section.id === sectionToEdit.id ? { ...section, name } : section
+              ));
+          } else {
+              const newSection = { id: Date.now(), name, isOpen: true, items: [] };
+              setSections(prev => [...prev, newSection]);
+          }
+          handleCloseAddSectionModal();
+        };
+
+        const handleOpenAddItemModal = (sectionId) => {
+          setActiveSectionId(sectionId);
+          setIsAddItemModalOpen(true);
+        };
+        
+        const handleSaveItem = (itemData) => {
+          if (itemToEdit) {
+              setSections(prev => prev.map(section => {
+                  if (section.id === itemToEdit.sectionId) {
+                      return {
+                          ...section,
+                          items: section.items.map(item =>
+                              item.id === itemToEdit.item.id ? { ...item, ...itemData } : item
+                          )
+                      };
+                  }
+                  return section;
+              }));
+          } else {
+              if (activeSectionId === null) return;
+              const newItem = { ...itemData, id: Date.now(), isFavourite: false };
+              setSections(prev => prev.map(section => 
+                  section.id === activeSectionId ? { ...section, items: [...section.items, newItem] } : section
+              ));
+          }
+          handleCloseAddItemModal();
+          setActiveSectionId(null);
+        };
+
+        const handleOpenEditSectionModal = (section) => {
+          setSectionToEdit(section);
+          setIsAddSectionModalOpen(true);
+        };
+
+        const handleOpenEditItemModal = (sectionId, item) => {
+          setItemToEdit({ sectionId, item });
+          setIsAddItemModalOpen(true);
+        };
+        
+        const handleCloseAddSectionModal = () => {
+          setIsAddSectionModalOpen(false);
+          setSectionToEdit(null);
+        };
+
+        const handleCloseAddItemModal = () => {
+          setIsAddItemModalOpen(false);
+          setItemToEdit(null);
+        };
+
+        const handleToggleSection = (id) => {
+          setSections(prev => prev.map(section =>
+            section.id === id ? { ...section, isOpen: !section.isOpen } : section
+          ));
+        };
+        
+        const openDeleteSectionConfirm = (sectionId, name) => {
+          setItemToDelete({ type: 'section', sectionId, name });
+          setIsConfirmModalOpen(true);
+        };
+        
+        const openDeleteItemConfirm = (sectionId, itemId, name) => {
+          setItemToDelete({ type: 'item', sectionId, itemId, name });
+          setIsConfirmModalOpen(true);
+        };
+
+        const handleConfirmDelete = () => {
+          if (!itemToDelete) return;
+
+          if (itemToDelete.type === 'section') {
+              setSections(prev => prev.filter(section => section.id !== itemToDelete.sectionId));
+          } else { 
+              setSections(prev => prev.map(section => 
+                  section.id === itemToDelete.sectionId 
+                      ? { ...section, items: section.items.filter(item => item.id !== itemToDelete.itemId) } 
+                      : section
+              ));
+          }
+
+          setIsConfirmModalOpen(false);
+          setItemToDelete(null);
+        };
+
+        const handleCloseConfirmModal = () => {
+          setIsConfirmModalOpen(false);
+          setItemToDelete(null);
+        };
+
+
+        const handleToggleFavourite = (sectionId, itemId) => {
+          setSections(prev => prev.map(section => {
+              if (section.id === sectionId) {
+                  return {
+                      ...section,
+                      items: section.items.map(item => 
+                          item.id === itemId ? { ...item, isFavourite: !item.isFavourite } : item
+                      )
+                  };
+              }
+              return section;
+          }));
+        };
+
+        const favouriteItems = useMemo(() => {
+          return sections.flatMap(section => 
+              section.items
+                  .filter(item => item.isFavourite)
+                  .map(item => ({ ...item, sectionId: section.id }))
+          );
+        }, [sections]);
+
+        const calculatedValue = useMemo(() => {
+          const numAmount = parseFloat(amount);
+          const numVolume = parseFloat(volume);
+          const numConcentration = parseFloat(concentration);
+
+          const conversionFactorsToUg = {
+              'g': 1e6, 'mg': 1e3, 'µg': 1, 'ng': 1e-3,
+          };
+
+          const normalizedAmountInUg = !isNaN(numAmount) ? numAmount * conversionFactorsToUg[amountUnit] : NaN;
+          const normalizedConcentrationInUgPerMl = !isNaN(numConcentration) ? numConcentration * conversionFactorsToUg[concentrationUnit] : NaN;
+
+          let result;
+
+          if (mode === 'amount' && numVolume > 0 && !isNaN(normalizedConcentrationInUgPerMl)) {
+              const resultInUg = numVolume * normalizedConcentrationInUgPerMl;
+              result = resultInUg / conversionFactorsToUg[amountUnit];
+          } else if (mode === 'volume' && !isNaN(normalizedAmountInUg) && normalizedAmountInUg > 0 && !isNaN(normalizedConcentrationInUgPerMl) && normalizedConcentrationInUgPerMl > 0) {
+              result = normalizedAmountInUg / normalizedConcentrationInUgPerMl;
+          } else if (mode === 'concentration' && !isNaN(normalizedAmountInUg) && normalizedAmountInUg > 0 && numVolume > 0) {
+              const resultInUgPerMl = normalizedAmountInUg / numVolume;
+              result = resultInUgPerMl / conversionFactorsToUg[concentrationUnit];
+          }
+
+          if (result !== undefined && isFinite(result)) {
+            return result.toLocaleString(undefined, { maximumFractionDigits: 5, useGrouping: false });
+          }
+          return '';
+        }, [mode, amount, volume, concentration, amountUnit, concentrationUnit]);
+
+        const handleModeChange = (e) => {
+          setMode(e.target.value);
+        };
+        
+          const confirmModalInfo = useMemo(() => {
+          if (!itemToDelete) return { title: '', message: '' };
+          if (itemToDelete.type === 'section') {
+            return {
+              title: 'Delete Section',
+              message: `Are you sure you want to delete the "${itemToDelete.name}" section and all its items? This action cannot be undone.`
+            };
+          }
+          return {
+            title: 'Delete Item',
+            message: `Are you sure you want to delete "${itemToDelete.name}"? This action cannot be undone.`
+          };
+        }, [itemToDelete]);
+
+        const handleMouseDown = (e, type, id, sectionId) => {
+          if (e.button !== 0 || !isEditMode) return;
+          e.preventDefault();
+
+          const element = e.currentTarget.closest('[data-draggable-id]');
+          if (!element) return;
+
+          const rect = element.getBoundingClientRect();
+          const clone = element.cloneNode(true);
+
+          const offsetX = e.clientX - rect.left;
+          const offsetY = e.clientY - rect.top;
+
+          clone.style.position = 'fixed';
+          clone.style.top = `${rect.top}px`;
+          clone.style.left = `${rect.left}px`;
+          clone.style.width = `${rect.width}px`;
+          clone.style.zIndex = '2000';
+          clone.style.pointerEvents = 'none';
+          clone.classList.add('dragging-clone');
+          document.body.appendChild(clone);
+
+          element.classList.add('dragging-source');
+          document.body.classList.add('is-dragging');
+
+          setDraggingState({ type, id, sectionId, clone, element, offsetX, offsetY });
+        };
+
+        useEffect(() => {
+          let lastOverId = null;
+
+          const handleMouseMove = (e) => {
+              if (!draggingState) return;
+
+              draggingState.clone.style.left = `${e.clientX - draggingState.offsetX}px`;
+              draggingState.clone.style.top = `${e.clientY - draggingState.offsetY}px`;
+              
+              const parentContainer = draggingState.element.parentElement;
+              if (!parentContainer) return;
+
+              const draggables = Array.from(
+                  parentContainer.querySelectorAll('[data-draggable-id]')
+              );
+
+              const overElement = draggables.find(child => {
+                  if (child === draggingState.element) return false;
+                  const rect = child.getBoundingClientRect();
+                  return e.clientY >= rect.top && e.clientY <= rect.bottom;
+              });
+
+              if (overElement) {
+                  const overId = Number(overElement.dataset.draggableId);
+
+                  if (overId === lastOverId) return;
+                  lastOverId = overId;
+                  
+                  const sourceId = draggingState.id;
+                  if (overId === sourceId) return;
+
+                  setSections(currentSections => {
+                      const newSections = JSON.parse(JSON.stringify(currentSections));
+                      
+                      if (draggingState.type === 'section') {
+                          const sourceIndex = newSections.findIndex((s) => s.id === sourceId);
+                          const destIndex = newSections.findIndex((s) => s.id === overId);
+                          if (sourceIndex === -1 || destIndex === -1) return currentSections;
+                          
+                          const [movedSection] = newSections.splice(sourceIndex, 1);
+                          newSections.splice(destIndex, 0, movedSection);
+                          
+                      } else if (draggingState.type === 'item' && draggingState.sectionId) {
+                          const section = newSections.find((s) => s.id === draggingState.sectionId);
+                          if (!section) return currentSections;
+                          
+                          const sourceIndex = section.items.findIndex((i) => i.id === sourceId);
+                          const destIndex = section.items.findIndex((i) => i.id === overId);
+                          if (sourceIndex === -1 || destIndex === -1) return currentSections;
+
+                          const [movedItem] = section.items.splice(sourceIndex, 1);
+                          section.items.splice(destIndex, 0, movedItem);
+                      }
+                      return newSections;
+                  });
+              } else {
+                  lastOverId = null;
+              }
+          };
+
+          const handleMouseUp = () => {
+              if (!draggingState) return;
+              
+              document.body.classList.remove('is-dragging');
+              document.body.removeChild(draggingState.clone);
+              draggingState.element.classList.remove('dragging-source');
+              
+              setDraggingState(null);
+          };
+
+          if (draggingState) {
+              window.addEventListener('mousemove', handleMouseMove);
+              window.addEventListener('mouseup', handleMouseUp, { once: true });
+          }
+
+          return () => {
+              window.removeEventListener('mousemove', handleMouseMove);
+              window.removeEventListener('mouseup', handleMouseUp);
+              if (draggingState?.clone?.parentElement) {
+                  document.body.removeChild(draggingState.clone);
+              }
+          };
+        }, [draggingState, setSections]);
+
+        const renderItem = (item, sectionId) => {
+          const minDose = weight * item.minRange;
+          const maxDose = weight * item.maxRange;
+          const unitLabel = item.unit.split('/')[0];
+          const isSingleValue = item.minRange === item.maxRange;
+
+          const rangeDisplay = isSingleValue
+              ? `${item.maxRange} ${item.unit}`
+              : `${item.minRange}–${item.maxRange} ${item.unit}`;
+
+          const doseDisplay = isSingleValue
+              ? `${maxDose.toFixed(1)} ${unitLabel}`
+              : `${minDose.toFixed(1)}–${maxDose.toFixed(1)} ${unitLabel}`;
+
+          return (
+              <div 
+                  key={item.id} 
+                  className="item-row"
+                  data-draggable-id={item.id}
+              >
+                  {isEditMode && (
+                      <div className="drag-handle" onMouseDown={(e) => handleMouseDown(e, 'item', item.id, sectionId)}>
+                          <DragHandleIcon />
+                      </div>
+                  )}
+                  <div className="item-content">
+                    <div className="item-header">
+                        <span className="item-name">{item.name}</span>
+                        {isEditMode && (
+                            <div className="item-actions">
+                                <button className="icon-button" onClick={() => handleOpenEditItemModal(sectionId, item)} title="Edit item" aria-label="Edit Item">
+                                    <PencilIcon />
+                                </button>
+                                <button className="icon-button" onClick={() => handleToggleFavourite(sectionId, item.id)} title={item.isFavourite ? 'Remove from favourites' : 'Add to favourites'} aria-label="Toggle Favourite">
+                                    <HeartIcon isFavourite={item.isFavourite} />
+                                </button>
+                                <button className="icon-button" onClick={() => openDeleteItemConfirm(sectionId, item.id, item.name)} title="Delete item" aria-label="Delete Item">
+                                    <TrashIcon />
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                    <div className="item-details">
+                        <span className="item-range">{rangeDisplay}</span>
+                        <span className="item-arrow">→</span>
+                        <span className="item-dose">{doseDisplay}</span>
+                    </div>
+                  </div>
+              </div>
+          );
+      };
+
+        return (
+          <>
+            <button 
+                className="theme-toggle-button"
+                onClick={() => setIsDarkMode(!isDarkMode)}
+                title={isDarkMode ? 'Activate light mode' : 'Activate dark mode'}
+                aria-label="Toggle theme"
+            >
+                {isDarkMode ? <SunIcon /> : <MoonIcon />}
+            </button>
+
+            <header className="main-header">
+              <h1>Anaesthesia Calculator</h1>
+            </header>
+            
+            <div className="app-wrapper">
+              <div className="edit-mode-toggle-container">
+                  <div className="toggle-switch">
+                      <input type="checkbox" id="edit-mode-toggle" checked={isEditMode} onChange={(e) => setIsEditMode(e.target.checked)} className="toggle-checkbox" />
+                      <label htmlFor="edit-mode-toggle" className="toggle-label"><span className="sr-only">Toggle Edit Mode</span></label>
+                      <span className="toggle-text">Edit Mode</span>
+                  </div>
+              </div>
+            
+              <div className="patient-info-container">
+                <div className="info-section">
+                  <label htmlFor="age-display">Age</label>
+                  <div className="stepper-control">
+                    <button onClick={() => handleAgeChange(-1)} disabled={age <= 0} aria-label="Decrease age">-</button>
+                    <span id="age-display">{age} years</span>
+                    <button onClick={() => handleAgeChange(1)} disabled={age >= 14} aria-label="Increase age">+</button>
+                  </div>
+                </div>
+                <div className="info-section">
+                  <div className="weight-header">
+                    <div className="weight-label-container">
+                        <label htmlFor="weight-slider">Weight</label>
+                        <button className="weight-value-button" onClick={() => setIsWeightModalOpen(true)}>
+                          {weight} kg
+                        </button>
+                    </div>
+                    <div className="toggle-switch">
+                      <input type="checkbox" id="age-based-toggle" checked={useAgeBasedWeight} onChange={handleToggleAgeBasedWeight} className="toggle-checkbox" />
+                      <label htmlFor="age-based-toggle" className="toggle-label"><span className="sr-only">Toggle Age-based weight</span></label>
+                      <span className="toggle-text">Age-based weight</span>
+                    </div>
+                  </div>
+                  <input type="range" id="weight-slider" min="1" max="150" value={weight} onChange={handleWeightChange} disabled={useAgeBasedWeight} className="weight-slider" />
+                </div>
+              </div>
+              
+              {favouriteItems.length > 0 && (
+                  <div className="calculator-container custom-section favourites-section">
+                      <div className="collapsible-header" onClick={() => setIsFavouritesOpen(!isFavouritesOpen)} role="button" aria-expanded={isFavouritesOpen}>
+                          <div className="header-title">
+                              <h1>Favourites</h1>
+                          </div>
+                          <ChevronIcon isOpen={isFavouritesOpen} />
+                      </div>
+                      <div className={`collapsible-content ${isFavouritesOpen ? 'open' : ''}`}>
+                          <div>
+                            <div className="custom-section-content">
+                                <div className="item-list">
+                                    {favouriteItems.map(item => renderItem(item, item.sectionId))}
+                                </div>
+                            </div>
+                          </div>
+                      </div>
+                  </div>
+              )}
+
+              {isEditMode && (
+                  <div className="add-section-container">
+                      <button className="add-section-button" onClick={() => setIsAddSectionModalOpen(true)}>
+                          + Add Section
+                      </button>
+                  </div>
+              )}
+
+              {sections.map(section => {
+                  const hasItems = section.items.length > 0;
+                  return (
+                      <div
+                          key={section.id} 
+                          className="calculator-container custom-section"
+                          data-draggable-id={section.id}
+                      >
+                          <div className="collapsible-header" >
+                              {isEditMode && (
+                                  <div className="drag-handle" onMouseDown={(e) => handleMouseDown(e, 'section', section.id)}>
+                                      <DragHandleIcon />
+                                  </div>
+                              )}
+                              <div className="header-title" onClick={() => handleToggleSection(section.id)}>
+                                <h1>{section.name}</h1>
+                              </div>
+                              <div className="header-actions">
+                                  {isEditMode && (
+                                      <>
+                                          <button className="icon-button" onClick={(e) => { e.stopPropagation(); handleOpenEditSectionModal(section); }} title="Edit section" aria-label="Edit section">
+                                              <PencilIcon />
+                                          </button>
+                                          <button className="icon-button" onClick={(e) => { e.stopPropagation(); openDeleteSectionConfirm(section.id, section.name); }} title="Delete section" aria-label="Delete section">
+                                              <TrashIcon/>
+                                          </button>
+                                      </>
+                                  )}
+                                  <div onClick={() => handleToggleSection(section.id)} role="button" aria-label="Toggle section visibility">
+                                    <ChevronIcon isOpen={section.isOpen} />
+                                  </div>
+                              </div>
+                          </div>
+                          <div className={`collapsible-content ${section.isOpen ? 'open' : ''}`}>
+                              <div>
+                                <div className="custom-section-content">
+                                    {hasItems && (
+                                        <div className="item-list">
+                                            {section.items.map(item => renderItem(item, section.id))}
+                                        </div>
+                                    )}
+                                    {isEditMode && (
+                                        <div className="add-item-container">
+                                            <button className="add-item-button" onClick={() => handleOpenAddItemModal(section.id)}>+ Add New</button>
+                                        </div>
+                                    )}
+                                </div>
+                              </div>
+                          </div>
+                      </div>
+                  );
+              })}
+
+
+              <div className="calculator-container">
+                <div className="collapsible-header" onClick={() => setIsCalculatorOpen(!isCalculatorOpen)} role="button" aria-expanded={isCalculatorOpen}>
+                  <div className="header-title">
+                      <h1>Dosage Calculator</h1>
+                  </div>
+                  <ChevronIcon isOpen={isCalculatorOpen} />
+                </div>
+                
+                <div className={`collapsible-content ${isCalculatorOpen ? 'open' : ''}`}>
+                  <div>
+                    <div className="calculator-grid">
+                      <div className="calculator-row">
+                          <div className="radio-control">
+                              <input type="radio" id="calc-amount" name="calculation-mode" value="amount" checked={mode === 'amount'} onChange={handleModeChange} />
+                              <label htmlFor="calc-amount" title="Calculate Amount"><span className="sr-only">Calculate Amount</span></label>
+                          </div>
+                          <div className="input-group">
+                              <label htmlFor="amount">Total Amount</label>
+                              <div className="input-field">
+                                  <input id="amount" type="number" value={mode === 'amount' ? calculatedValue : amount} onChange={(e) => setAmount(e.target.value)} disabled={mode === 'amount'} placeholder="e.g., 100" min="0" aria-label="Total Amount Value" />
+                                  <select value={amountUnit} onChange={(e) => setAmountUnit(e.target.value)} disabled={mode === 'amount'} aria-label="Total Amount Unit">
+                                      <option value="g">g</option> <option value="mg">mg</option> <option value="µg">µg</option> <option value="ng">ng</option>
+                                  </select>
+                              </div>
+                          </div>
+                      </div>
+                      <div className="calculator-row">
+                          <div className="radio-control">
+                              <input type="radio" id="calc-volume" name="calculation-mode" value="volume" checked={mode === 'volume'} onChange={handleModeChange} />
+                              <label htmlFor="calc-volume" title="Calculate Volume"><span className="sr-only">Calculate Volume</span></label>
+                          </div>
+                          <div className="input-group">
+                              <label htmlFor="volume">Total Volume</label>
+                              <div className="input-field">
+                                  <input id="volume" type="number" value={mode === 'volume' ? calculatedValue : volume} onChange={(e) => setVolume(e.target.value)} disabled={mode === 'volume'} placeholder="e.g., 10" min="0" aria-label="Total Volume Value" />
+                                  <span className="unit-display">ml</span>
+                              </div>
+                          </div>
+                      </div>
+                      <div className="calculator-row">
+                          <div className="radio-control">
+                              <input type="radio" id="calc-concentration" name="calculation-mode" value="concentration" checked={mode === 'concentration'} onChange={handleModeChange} />
+                              <label htmlFor="calc-concentration" title="Calculate Concentration"><span className="sr-only">Calculate Concentration</span></label>
+                          </div>
+                          <div className="input-group">
+                              <label htmlFor="concentration">Concentration</label>
+                              <div className="input-field">
+                                  <input id="concentration" type="number" value={mode === 'concentration' ? calculatedValue : concentration} onChange={(e) => setConcentration(e.target.value)} disabled={mode === 'concentration'} placeholder="e.g., 10" min="0" aria-label="Concentration Value" />
+                                  <select value={concentrationUnit} onChange={(e) => setConcentrationUnit(e.target.value)} disabled={mode === 'concentration'} aria-label="Concentration Unit">
+                                      <option value="g">g/ml</option> <option value="mg">mg/ml</option> <option value="µg">µg/ml</option> <option value="ng">ng/ml</option>
+                                  </select>
+                              </div>
+                          </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <WeightModal isOpen={isWeightModalOpen} currentWeight={weight} onClose={() => setIsWeightModalOpen(false)} onSave={handleSaveWeight} />
+            <AddSectionModal 
+              isOpen={isAddSectionModalOpen} 
+              onClose={handleCloseAddSectionModal} 
+              onSave={handleSaveSection}
+              editingSection={sectionToEdit}
+            />
+            <AddItemModal 
+              isOpen={isAddItemModalOpen} 
+              onClose={handleCloseAddItemModal} 
+              onSave={handleSaveItem} 
+              editingItem={itemToEdit?.item}
+            />
+            <ConfirmationModal 
+              isOpen={isConfirmModalOpen} 
+              onClose={handleCloseConfirmModal} 
+              onConfirm={handleConfirmDelete} 
+              title={confirmModalInfo.title}
+              message={confirmModalInfo.message}
+            />
+          </>
+        );
+      };
+
+      const root = ReactDOM.createRoot(document.getElementById('root'));
+      root.render(
+        <React.StrictMode>
+          <App />
+        </React.StrictMode>
+      );
+    </script>
+  </body>
+</html>
