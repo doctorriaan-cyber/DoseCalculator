@@ -366,8 +366,9 @@
         overflow: hidden;
       }
 
-      .collapsible-content > div > .calculator-grid {
-        padding: 0 1.5rem 1.5rem 1.5rem;
+      .collapsible-content .custom-section-content,
+      .collapsible-content .calculator-grid {
+          padding: 0 1.5rem 1.5rem 1.5rem;
       }
 
       .theme-toggle-button {
@@ -532,9 +533,6 @@
       }
 
       /* Custom Section Content */
-      .custom-section-content {
-          padding: 0 1.5rem 1.5rem 1.5rem;
-      }
       .item-list {
           display: flex;
           flex-direction: column;
@@ -853,6 +851,39 @@
       import ReactDOM from 'react-dom/client';
 
       const App = () => {
+        const STORAGE_KEY = 'anaesthesiaCalculatorState';
+
+        // --- STATE INITIALIZATION ---
+        const getInitialState = () => {
+          try {
+            const savedState = localStorage.getItem(STORAGE_KEY);
+            if (savedState) {
+              return JSON.parse(savedState);
+            }
+          } catch (error) {
+            console.error("Error reading from localStorage", error);
+          }
+          // Default state if nothing is saved or parsing fails
+          return {
+            mode: 'volume',
+            amount: '',
+            amountUnit: 'mg',
+            volume: '',
+            concentration: '',
+            concentrationUnit: 'mg',
+            isDarkMode: true,
+            isCalculatorOpen: false,
+            age: 8,
+            weight: 24,
+            useAgeBasedWeight: false,
+            sections: [],
+            isFavouritesOpen: true,
+            isEditMode: false,
+          };
+        };
+
+        const initialState = getInitialState();
+
         // --- TYPE DEFINITIONS ---
         type Mode = 'amount' | 'volume' | 'concentration';
         type Unit = 'g' | 'mg' | 'µg' | 'ng';
@@ -1150,36 +1181,62 @@
         };
 
 
-        // --- MAIN APP COMPONENT ---
-        const [mode, setMode] = useState('volume');
-        const [amount, setAmount] = useState('');
-        const [amountUnit, setAmountUnit] = useState('mg');
-        const [volume, setVolume] = useState('');
-        const [concentration, setConcentration] = useState('');
-        const [concentrationUnit, setConcentrationUnit] = useState('mg');
-        const [isDarkMode, setIsDarkMode] = useState(true);
-        const [isCalculatorOpen, setIsCalculatorOpen] = useState(false);
-
-        const [age, setAge] = useState(8);
-        const [weight, setWeight] = useState(24);
-        const [useAgeBasedWeight, setUseAgeBasedWeight] = useState(false);
+        // --- MAIN APP STATE ---
+        const [mode, setMode] = useState(initialState.mode);
+        const [amount, setAmount] = useState(initialState.amount);
+        const [amountUnit, setAmountUnit] = useState(initialState.amountUnit);
+        const [volume, setVolume] = useState(initialState.volume);
+        const [concentration, setConcentration] = useState(initialState.concentration);
+        const [concentrationUnit, setConcentrationUnit] = useState(initialState.concentrationUnit);
+        const [isDarkMode, setIsDarkMode] = useState(initialState.isDarkMode);
+        const [isCalculatorOpen, setIsCalculatorOpen] = useState(initialState.isCalculatorOpen);
+        const [age, setAge] = useState(initialState.age);
+        const [weight, setWeight] = useState(initialState.weight);
+        const [useAgeBasedWeight, setUseAgeBasedWeight] = useState(initialState.useAgeBasedWeight);
+        const [sections, setSections] = useState(initialState.sections);
+        const [isFavouritesOpen, setIsFavouritesOpen] = useState(initialState.isFavouritesOpen);
+        const [isEditMode, setIsEditMode] = useState(initialState.isEditMode);
+        
+        // Transient state (not saved)
         const [isWeightModalOpen, setIsWeightModalOpen] = useState(false);
-
-        const [sections, setSections] = useState([]);
         const [isAddSectionModalOpen, setIsAddSectionModalOpen] = useState(false);
         const [isAddItemModalOpen, setIsAddItemModalOpen] = useState(false);
         const [activeSectionId, setActiveSectionId] = useState(null);
-        const [isFavouritesOpen, setIsFavouritesOpen] = useState(true);
-        
         const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
         const [itemToDelete, setItemToDelete] = useState(null);
-        
         const [sectionToEdit, setSectionToEdit] = useState(null);
         const [itemToEdit, setItemToEdit] = useState(null);
-        
-        const [isEditMode, setIsEditMode] = useState(false);
-
         const [draggingState, setDraggingState] = useState(null);
+
+        // --- PERSISTENCE EFFECT ---
+        useEffect(() => {
+          const stateToSave = {
+            mode,
+            amount,
+            amountUnit,
+            volume,
+            concentration,
+            concentrationUnit,
+            isDarkMode,
+            isCalculatorOpen,
+            age,
+            weight,
+            useAgeBasedWeight,
+            sections,
+            isFavouritesOpen,
+            isEditMode,
+          };
+          try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(stateToSave));
+          } catch (error) {
+            console.error("Error saving to localStorage", error);
+          }
+        }, [
+          mode, amount, amountUnit, volume, concentration, concentrationUnit,
+          isDarkMode, isCalculatorOpen, age, weight, useAgeBasedWeight,
+          sections, isFavouritesOpen, isEditMode
+        ]);
+
 
         useEffect(() => {
           document.body.classList.toggle('dark-mode', isDarkMode);
