@@ -97,7 +97,7 @@
         border-radius: 12px;
         box-shadow: 0 4px 20px var(--shadow-color);
         padding: 1.5rem 2rem;
-        margin-bottom: 1rem;
+        margin-bottom: 1.5rem;
         margin-top: 1rem;
         display: flex;
         flex-direction: column;
@@ -845,6 +845,41 @@
       body.dark-mode .favourites-section .chevron-icon {
           color: var(--background-color);
       }
+      
+      /* Airway Section Styles */
+      .airway-section {
+          padding: 1.5rem;
+      }
+      .airway-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+          gap: 1.25rem 1.5rem;
+      }
+      .airway-item {
+          display: flex;
+          flex-direction: column;
+          gap: 0.25rem;
+      }
+      .airway-item-label {
+          font-size: 0.9rem;
+          color: var(--label-color);
+          font-weight: 500;
+      }
+      .airway-item-value {
+          font-size: 1.15rem;
+          font-weight: 600;
+          color: var(--text-color);
+          display: flex;
+          align-items: center;
+      }
+      .oral-airway-color-indicator {
+          display: inline-block;
+          width: 14px;
+          height: 14px;
+          border-radius: 50%;
+          margin-left: 0.5rem;
+          box-shadow: 0 0 0 1px var(--border-color);
+      }
     </style>
   <script type="importmap">
 {
@@ -891,6 +926,7 @@
             useAgeBasedWeight: false,
             sections: [],
             isFavouritesOpen: true,
+            isAirwayOpen: true,
             isEditMode: false,
           };
         };
@@ -1203,11 +1239,12 @@
         const [concentrationUnit, setConcentrationUnit] = useState(initialState.concentrationUnit);
         const [isDarkMode, setIsDarkMode] = useState(initialState.isDarkMode);
         const [isCalculatorOpen, setIsCalculatorOpen] = useState(initialState.isCalculatorOpen);
-        const [age, setAge] = useState(initialState.age);
+        const [age, setAge] = useState(Math.min(initialState.age, 14));
         const [weight, setWeight] = useState(initialState.weight);
         const [useAgeBasedWeight, setUseAgeBasedWeight] = useState(initialState.useAgeBasedWeight);
         const [sections, setSections] = useState(initialState.sections);
         const [isFavouritesOpen, setIsFavouritesOpen] = useState(initialState.isFavouritesOpen);
+        const [isAirwayOpen, setIsAirwayOpen] = useState(initialState.isAirwayOpen ?? true);
         const [isEditMode, setIsEditMode] = useState(initialState.isEditMode);
         
         // Transient state (not saved)
@@ -1237,6 +1274,7 @@
             useAgeBasedWeight,
             sections,
             isFavouritesOpen,
+            isAirwayOpen,
             isEditMode,
           };
           try {
@@ -1247,7 +1285,7 @@
         }, [
           mode, amount, amountUnit, volume, concentration, concentrationUnit,
           isDarkMode, isCalculatorOpen, age, weight, useAgeBasedWeight,
-          sections, isFavouritesOpen, isEditMode
+          sections, isFavouritesOpen, isAirwayOpen, isEditMode
         ]);
 
 
@@ -1630,229 +1668,335 @@
           );
       };
 
-        return (
-          <>
-            <button 
-                className="theme-toggle-button"
-                onClick={() => setIsDarkMode(!isDarkMode)}
-                title={isDarkMode ? 'Activate light mode' : 'Activate dark mode'}
-                aria-label="Toggle theme"
-            >
-                {isDarkMode ? <SunIcon /> : <MoonIcon />}
-            </button>
+      const AirwayInfo = ({ age, weight, isOpen, setIsOpen }) => {
+          const lmaSize = useMemo(() => {
+              if (weight < 5) return '1';
+              if (weight <= 10) return '1.5';
+              if (weight <= 20) return '2';
+              if (weight <= 30) return '2.5';
+              if (weight <= 50) return '3';
+              if (weight <= 70) return '4';
+              return '5';
+          }, [weight]);
 
-            <button
-                className={`edit-mode-toggle-button ${isEditMode ? 'active' : ''}`}
-                onClick={() => setIsEditMode(!isEditMode)}
-                title={isEditMode ? 'Disable edit mode' : 'Enable edit mode'}
-                aria-label="Toggle edit mode"
-            >
-                <PencilIcon />
-            </button>
+          const uncuffedEttSize = useMemo(() => {
+              if (age < 1) { // Neonatal/infant logic based on weight
+                  if (weight < 1) return '2.5';
+                  if (weight <= 2) return '3.0';
+                  if (weight <= 3) return '3.5';
+                  return '3.5 - 4.0';
+              }
+              if (age <= 16) { // Pediatric age-based formula
+                return ((age / 4) + 4).toFixed(1);
+              }
+              return '7.5 - 9.0'; // Adult range
+          }, [age, weight]);
 
-            <header className="main-header">
-              <h1>Anaesthesia Calculator</h1>
-            </header>
-            
-            <div className="app-wrapper">
-              <div className="patient-info-container">
-                <div className="info-section">
-                  <label htmlFor="age-display">Age</label>
-                  <div className="stepper-control">
-                    <button onClick={() => handleAgeChange(-1)} disabled={age <= 0} aria-label="Decrease age">-</button>
-                    <span id="age-display">{age} years</span>
-                    <button onClick={() => handleAgeChange(1)} disabled={age >= 14} aria-label="Increase age">+</button>
-                  </div>
-                </div>
-                <div className="info-section">
-                  <div className="weight-header">
-                    <div className="weight-label-container">
-                        <label htmlFor="weight-slider">Weight</label>
-                        <button className="weight-value-button" onClick={() => setIsWeightModalOpen(true)}>
-                          {weight} kg
-                        </button>
+          const cuffedEttSize = useMemo(() => {
+              if (age < 1) { // Neonatal/infant logic based on weight
+                  if (weight < 1) return '2.5';
+                  if (weight <= 2) return '3.0';
+                  if (weight <= 3) return '3.5';
+                  return '3.5 - 4.0';
+              }
+              if (age <= 16) { // Pediatric age-based formula
+                return ((age / 4) + 3.5).toFixed(1);
+              }
+              return '7.0 - 8.5'; // Adult range
+          }, [age, weight]);
+
+          const oralAirway = useMemo(() => {
+              if (age < 1) return { size: '00 (50mm)', color: 'Blue', code: '#3f9eff' };
+              if (age <= 2) return { size: '0 (60mm)', color: 'Black', code: '#212529' };
+              if (age <= 5) return { size: '1 (70mm)', color: 'White', code: '#ffffff', border: `1px solid var(--border-color)` };
+              if (age <= 9) return { size: '2 (80mm)', color: 'Green', code: '#28a745' };
+              if (age <= 14) return { size: '3 (90mm)', color: 'Yellow', code: '#ffc107' };
+              // Adults
+              if (weight >= 90) return { size: '5 (110mm)', color: 'Orange', code: '#fd7e14' };
+              if (weight >= 60) return { size: '4 (100mm)', color: 'Red', code: '#dc3545' };
+              return { size: '3 (90mm)', color: 'Yellow', code: '#ffc107' };
+          }, [age, weight]);
+
+          const nasalAirwaySize = useMemo(() => {
+              if (age < 2) return '16 Fr';
+              if (age <= 5) return '18-20 Fr';
+              if (age <= 10) return '22-24 Fr';
+              if (age <= 14) return '26-28 Fr';
+              return '28-32 Fr';
+          }, [age]);
+
+          return (
+              <div className="calculator-container">
+                  <div className="collapsible-header" onClick={() => setIsOpen(!isOpen)} role="button" aria-expanded={isOpen}>
+                    <div className="header-title">
+                        <h1>Airway</h1>
                     </div>
-                    <div className="toggle-switch">
-                      <input type="checkbox" id="age-based-toggle" checked={useAgeBasedWeight} onChange={handleToggleAgeBasedWeight} className="toggle-checkbox" />
-                      <label htmlFor="age-based-toggle" className="toggle-label"><span className="sr-only">Toggle Age-based weight</span></label>
-                      <span className="toggle-text">Age-based weight</span>
+                    <ChevronIcon isOpen={isOpen} />
+                  </div>
+                  <div className={`collapsible-content ${isOpen ? 'open' : ''}`}>
+                    <div>
+                      <div className="airway-section">
+                          <div className="airway-grid">
+                              <div className="airway-item">
+                                  <span className="airway-item-label">LMA Size</span>
+                                  <span className="airway-item-value">{lmaSize}</span>
+                              </div>
+                              <div className="airway-item">
+                                  <span className="airway-item-label">Uncuffed ETT</span>
+                                  <span className="airway-item-value">{uncuffedEttSize} mm</span>
+                              </div>
+                              <div className="airway-item">
+                                  <span className="airway-item-label">Cuffed ETT</span>
+                                  <span className="airway-item-value">{cuffedEttSize} mm</span>
+                              </div>
+                              <div className="airway-item">
+                                  <span className="airway-item-label">Oral Airway</span>
+                                  <span className="airway-item-value">
+                                      {oralAirway.size}
+                                      <span
+                                          className="oral-airway-color-indicator"
+                                          title={oralAirway.color}
+                                          style={{ backgroundColor: oralAirway.code, border: oralAirway.border || 'none' }}
+                                      ></span>
+                                  </span>
+                              </div>
+                              <div className="airway-item">
+                                  <span className="airway-item-label">Nasal Airway</span>
+                                  <span className="airway-item-value">{nasalAirwaySize}</span>
+                              </div>
+                          </div>
+                      </div>
                     </div>
                   </div>
-                  <input type="range" id="weight-slider" min="1" max="150" value={weight} onChange={handleWeightChange} disabled={useAgeBasedWeight} className="weight-slider" />
+              </div>
+          );
+      };
+
+      return (
+        <>
+          <button 
+              className="theme-toggle-button"
+              onClick={() => setIsDarkMode(!isDarkMode)}
+              title={isDarkMode ? 'Activate light mode' : 'Activate dark mode'}
+              aria-label="Toggle theme"
+          >
+              {isDarkMode ? <SunIcon /> : <MoonIcon />}
+          </button>
+
+          <button
+              className={`edit-mode-toggle-button ${isEditMode ? 'active' : ''}`}
+              onClick={() => setIsEditMode(!isEditMode)}
+              title={isEditMode ? 'Disable edit mode' : 'Enable edit mode'}
+              aria-label="Toggle edit mode"
+          >
+              <PencilIcon />
+          </button>
+
+          <header className="main-header">
+            <h1>Anaesthesia Calculator</h1>
+          </header>
+          
+          <div className="app-wrapper">
+            <div className="patient-info-container">
+              <div className="info-section">
+                <label htmlFor="age-display">Age</label>
+                <div className="stepper-control">
+                  <button onClick={() => handleAgeChange(-1)} disabled={age <= 0} aria-label="Decrease age">-</button>
+                  <span id="age-display">{age} years</span>
+                  <button onClick={() => handleAgeChange(1)} disabled={age >= 14} aria-label="Increase age">+</button>
                 </div>
               </div>
-              
-              {favouriteItems.length > 0 && (
-                  <div className="calculator-container custom-section favourites-section">
-                      <div className="collapsible-header" onClick={() => setIsFavouritesOpen(!isFavouritesOpen)} role="button" aria-expanded={isFavouritesOpen}>
-                          <div className="header-title">
-                              <h1>Favourites</h1>
-                          </div>
-                          <ChevronIcon isOpen={isFavouritesOpen} />
-                      </div>
-                      <div className={`collapsible-content ${isFavouritesOpen ? 'open' : ''}`}>
-                          <div>
-                            <div className="custom-section-content">
-                                <div className="item-list">
-                                    {favouriteItems.map(item => renderItem(item, item.sectionId))}
-                                </div>
-                            </div>
-                          </div>
-                      </div>
-                  </div>
-              )}
-
-              {isEditMode && (
-                  <div className="add-section-container">
-                      <button className="add-section-button" onClick={() => setIsAddSectionModalOpen(true)}>
-                          + Add Section
+              <div className="info-section">
+                <div className="weight-header">
+                  <div className="weight-label-container">
+                      <label htmlFor="weight-slider">Weight</label>
+                      <button className="weight-value-button" onClick={() => setIsWeightModalOpen(true)}>
+                        {weight} kg
                       </button>
                   </div>
-              )}
-
-              {sections.map(section => {
-                  const hasItems = section.items.length > 0;
-                  return (
-                      <div
-                          key={section.id} 
-                          className="calculator-container custom-section"
-                          data-draggable-id={section.id}
-                      >
-                          <div className="collapsible-header" >
-                              {isEditMode && (
-                                  <div className="drag-handle" onMouseDown={(e) => handleMouseDown(e, 'section', section.id)}>
-                                      <DragHandleIcon />
-                                  </div>
-                              )}
-                              <div className="header-title" onClick={() => handleToggleSection(section.id)}>
-                                <h1>{section.name}</h1>
-                              </div>
-                              <div className="header-actions">
-                                  {isEditMode && (
-                                      <>
-                                          <button className="icon-button" onClick={(e) => { e.stopPropagation(); handleOpenEditSectionModal(section); }} title="Edit section" aria-label="Edit section">
-                                              <PencilIcon />
-                                          </button>
-                                          <button className="icon-button" onClick={(e) => { e.stopPropagation(); openDeleteSectionConfirm(section.id, section.name); }} title="Delete section" aria-label="Delete section">
-                                              <TrashIcon/>
-                                          </button>
-                                      </>
-                                  )}
-                                  <div onClick={() => handleToggleSection(section.id)} role="button" aria-label="Toggle section visibility">
-                                    <ChevronIcon isOpen={section.isOpen} />
-                                  </div>
-                              </div>
-                          </div>
-                          <div className={`collapsible-content ${section.isOpen ? 'open' : ''}`}>
-                              <div>
-                                <div className="custom-section-content">
-                                    {hasItems && (
-                                        <div className="item-list">
-                                            {section.items.map(item => renderItem(item, section.id))}
-                                        </div>
-                                    )}
-                                    {isEditMode && (
-                                        <div className="add-item-container">
-                                            <button className="add-item-button" onClick={() => handleOpenAddItemModal(section.id)}>+ Add New</button>
-                                        </div>
-                                    )}
-                                </div>
-                              </div>
-                          </div>
-                      </div>
-                  );
-              })}
-
-
-              <div className="calculator-container">
-                <div className="collapsible-header" onClick={() => setIsCalculatorOpen(!isCalculatorOpen)} role="button" aria-expanded={isCalculatorOpen}>
-                  <div className="header-title">
-                      <h1>Dosage Calculator</h1>
+                  <div className="toggle-switch">
+                    <input type="checkbox" id="age-based-toggle" checked={useAgeBasedWeight} onChange={handleToggleAgeBasedWeight} className="toggle-checkbox" />
+                    <label htmlFor="age-based-toggle" className="toggle-label"><span className="sr-only">Toggle Age-based weight</span></label>
+                    <span className="toggle-text">Age-based weight</span>
                   </div>
-                  <ChevronIcon isOpen={isCalculatorOpen} />
                 </div>
-                
-                <div className={`collapsible-content ${isCalculatorOpen ? 'open' : ''}`}>
-                  <div>
-                    <div className="calculator-grid">
-                      <div className="calculator-row">
-                          <div className="radio-control">
-                              <input type="radio" id="calc-amount" name="calculation-mode" value="amount" checked={mode === 'amount'} onChange={handleModeChange} />
-                              <label htmlFor="calc-amount" title="Calculate Amount"><span className="sr-only">Calculate Amount</span></label>
-                          </div>
-                          <div className="input-group">
-                              <label htmlFor="amount">Total Amount</label>
-                              <div className="input-field">
-                                  <input id="amount" type="number" value={mode === 'amount' ? calculatedValue : amount} onChange={(e) => setAmount(e.target.value)} disabled={mode === 'amount'} placeholder="e.g., 100" min="0" aria-label="Total Amount Value" />
-                                  <select value={amountUnit} onChange={(e) => setAmountUnit(e.target.value)} disabled={mode === 'amount'} aria-label="Total Amount Unit">
-                                      <option value="g">g</option> <option value="mg">mg</option> <option value="µg">µg</option> <option value="ng">ng</option>
-                                  </select>
+                <input type="range" id="weight-slider" min="1" max="150" value={weight} onChange={handleWeightChange} disabled={useAgeBasedWeight} className="weight-slider" />
+              </div>
+            </div>
+
+            <AirwayInfo age={age} weight={weight} isOpen={isAirwayOpen} setIsOpen={setIsAirwayOpen} />
+            
+            {favouriteItems.length > 0 && (
+                <div className="calculator-container custom-section favourites-section">
+                    <div className="collapsible-header" onClick={() => setIsFavouritesOpen(!isFavouritesOpen)} role="button" aria-expanded={isFavouritesOpen}>
+                        <div className="header-title">
+                            <h1>Favourites</h1>
+                        </div>
+                        <ChevronIcon isOpen={isFavouritesOpen} />
+                    </div>
+                    <div className={`collapsible-content ${isFavouritesOpen ? 'open' : ''}`}>
+                        <div>
+                          <div className="custom-section-content">
+                              <div className="item-list">
+                                  {favouriteItems.map(item => renderItem(item, item.sectionId))}
                               </div>
                           </div>
-                      </div>
-                      <div className="calculator-row">
-                          <div className="radio-control">
-                              <input type="radio" id="calc-volume" name="calculation-mode" value="volume" checked={mode === 'volume'} onChange={handleModeChange} />
-                              <label htmlFor="calc-volume" title="Calculate Volume"><span className="sr-only">Calculate Volume</span></label>
-                          </div>
-                          <div className="input-group">
-                              <label htmlFor="volume">Total Volume</label>
-                              <div className="input-field">
-                                  <input id="volume" type="number" value={mode === 'volume' ? calculatedValue : volume} onChange={(e) => setVolume(e.target.value)} disabled={mode === 'volume'} placeholder="e.g., 10" min="0" aria-label="Total Volume Value" />
-                                  <span className="unit-display">ml</span>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {isEditMode && (
+                <div className="add-section-container">
+                    <button className="add-section-button" onClick={() => setIsAddSectionModalOpen(true)}>
+                        + Add Section
+                    </button>
+                </div>
+            )}
+
+            {sections.map(section => {
+                const hasItems = section.items.length > 0;
+                return (
+                    <div
+                        key={section.id} 
+                        className="calculator-container custom-section"
+                        data-draggable-id={section.id}
+                    >
+                        <div className="collapsible-header" >
+                            {isEditMode && (
+                                <div className="drag-handle" onMouseDown={(e) => handleMouseDown(e, 'section', section.id)}>
+                                    <DragHandleIcon />
+                                </div>
+                            )}
+                            <div className="header-title" onClick={() => handleToggleSection(section.id)}>
+                              <h1>{section.name}</h1>
+                            </div>
+                            <div className="header-actions">
+                                {isEditMode && (
+                                    <>
+                                        <button className="icon-button" onClick={(e) => { e.stopPropagation(); handleOpenEditSectionModal(section); }} title="Edit section" aria-label="Edit section">
+                                            <PencilIcon />
+                                        </button>
+                                        <button className="icon-button" onClick={(e) => { e.stopPropagation(); openDeleteSectionConfirm(section.id, section.name); }} title="Delete section" aria-label="Delete section">
+                                            <TrashIcon/>
+                                        </button>
+                                    </>
+                                )}
+                                <div onClick={() => handleToggleSection(section.id)} role="button" aria-label="Toggle section visibility">
+                                  <ChevronIcon isOpen={section.isOpen} />
+                                </div>
+                            </div>
+                        </div>
+                        <div className={`collapsible-content ${section.isOpen ? 'open' : ''}`}>
+                            <div>
+                              <div className="custom-section-content">
+                                  {hasItems && (
+                                      <div className="item-list">
+                                          {section.items.map(item => renderItem(item, section.id))}
+                                      </div>
+                                  )}
+                                  {isEditMode && (
+                                      <div className="add-item-container">
+                                          <button className="add-item-button" onClick={() => handleOpenAddItemModal(section.id)}>+ Add New</button>
+                                      </div>
+                                  )}
                               </div>
-                          </div>
-                      </div>
-                      <div className="calculator-row">
-                          <div className="radio-control">
-                              <input type="radio" id="calc-concentration" name="calculation-mode" value="concentration" checked={mode === 'concentration'} onChange={handleModeChange} />
-                              <label htmlFor="calc-concentration" title="Calculate Concentration"><span className="sr-only">Calculate Concentration</span></label>
-                          </div>
-                          <div className="input-group">
-                              <label htmlFor="concentration">Concentration</label>
-                              <div className="input-field">
-                                  <input id="concentration" type="number" value={mode === 'concentration' ? calculatedValue : concentration} onChange={(e) => setConcentration(e.target.value)} disabled={mode === 'concentration'} placeholder="e.g., 10" min="0" aria-label="Concentration Value" />
-                                  <select value={concentrationUnit} onChange={(e) => setConcentrationUnit(e.target.value)} disabled={mode === 'concentration'} aria-label="Concentration Unit">
-                                      <option value="g">g/ml</option> <option value="mg">mg/ml</option> <option value="µg">µg/ml</option> <option value="ng">ng/ml</option>
-                                  </select>
-                              </div>
-                          </div>
-                      </div>
+                            </div>
+                        </div>
+                    </div>
+                );
+            })}
+
+
+            <div className="calculator-container">
+              <div className="collapsible-header" onClick={() => setIsCalculatorOpen(!isCalculatorOpen)} role="button" aria-expanded={isCalculatorOpen}>
+                <div className="header-title">
+                    <h1>Dosage Calculator</h1>
+                </div>
+                <ChevronIcon isOpen={isCalculatorOpen} />
+              </div>
+              
+              <div className={`collapsible-content ${isCalculatorOpen ? 'open' : ''}`}>
+                <div>
+                  <div className="calculator-grid">
+                    <div className="calculator-row">
+                        <div className="radio-control">
+                            <input type="radio" id="calc-amount" name="calculation-mode" value="amount" checked={mode === 'amount'} onChange={handleModeChange} />
+                            <label htmlFor="calc-amount" title="Calculate Amount"><span className="sr-only">Calculate Amount</span></label>
+                        </div>
+                        <div className="input-group">
+                            <label htmlFor="amount">Total Amount</label>
+                            <div className="input-field">
+                                <input id="amount" type="number" value={mode === 'amount' ? calculatedValue : amount} onChange={(e) => setAmount(e.target.value)} disabled={mode === 'amount'} placeholder="e.g., 100" min="0" aria-label="Total Amount Value" />
+                                <select value={amountUnit} onChange={(e) => setAmountUnit(e.target.value)} disabled={mode === 'amount'} aria-label="Total Amount Unit">
+                                    <option value="g">g</option> <option value="mg">mg</option> <option value="µg">µg</option> <option value="ng">ng</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="calculator-row">
+                        <div className="radio-control">
+                            <input type="radio" id="calc-volume" name="calculation-mode" value="volume" checked={mode === 'volume'} onChange={handleModeChange} />
+                            <label htmlFor="calc-volume" title="Calculate Volume"><span className="sr-only">Calculate Volume</span></label>
+                        </div>
+                        <div className="input-group">
+                            <label htmlFor="volume">Total Volume</label>
+                            <div className="input-field">
+                                <input id="volume" type="number" value={mode === 'volume' ? calculatedValue : volume} onChange={(e) => setVolume(e.target.value)} disabled={mode === 'volume'} placeholder="e.g., 10" min="0" aria-label="Total Volume Value" />
+                                <span className="unit-display">ml</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="calculator-row">
+                        <div className="radio-control">
+                            <input type="radio" id="calc-concentration" name="calculation-mode" value="concentration" checked={mode === 'concentration'} onChange={handleModeChange} />
+                            <label htmlFor="calc-concentration" title="Calculate Concentration"><span className="sr-only">Calculate Concentration</span></label>
+                        </div>
+                        <div className="input-group">
+                            <label htmlFor="concentration">Concentration</label>
+                            <div className="input-field">
+                                <input id="concentration" type="number" value={mode === 'concentration' ? calculatedValue : concentration} onChange={(e) => setConcentration(e.target.value)} disabled={mode === 'concentration'} placeholder="e.g., 10" min="0" aria-label="Concentration Value" />
+                                <select value={concentrationUnit} onChange={(e) => setConcentrationUnit(e.target.value)} disabled={mode === 'concentration'} aria-label="Concentration Unit">
+                                    <option value="g">g/ml</option> <option value="mg">mg/ml</option> <option value="µg">µg/ml</option> <option value="ng">ng/ml</option>
+                                </select>
+                            </div>
+                        </div>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
-            <WeightModal isOpen={isWeightModalOpen} currentWeight={weight} onClose={() => setIsWeightModalOpen(false)} onSave={handleSaveWeight} />
-            <AddSectionModal 
-              isOpen={isAddSectionModalOpen} 
-              onClose={handleCloseAddSectionModal} 
-              onSave={handleSaveSection}
-              editingSection={sectionToEdit}
-            />
-            <AddItemModal 
-              isOpen={isAddItemModalOpen} 
-              onClose={handleCloseAddItemModal} 
-              onSave={handleSaveItem} 
-              editingItem={itemToEdit?.item}
-            />
-            <ConfirmationModal 
-              isOpen={isConfirmModalOpen} 
-              onClose={handleCloseConfirmModal} 
-              onConfirm={handleConfirmDelete} 
-              title={confirmModalInfo.title}
-              message={confirmModalInfo.message}
-            />
-          </>
-        );
-      };
-
-      const root = ReactDOM.createRoot(document.getElementById('root'));
-      root.render(
-        <React.StrictMode>
-          <App />
-        </React.StrictMode>
+          </div>
+          <WeightModal isOpen={isWeightModalOpen} currentWeight={weight} onClose={() => setIsWeightModalOpen(false)} onSave={handleSaveWeight} />
+          <AddSectionModal 
+            isOpen={isAddSectionModalOpen} 
+            onClose={handleCloseAddSectionModal} 
+            onSave={handleSaveSection}
+            editingSection={sectionToEdit}
+          />
+          <AddItemModal 
+            isOpen={isAddItemModalOpen} 
+            onClose={handleCloseAddItemModal} 
+            onSave={handleSaveItem} 
+            editingItem={itemToEdit?.item}
+          />
+          <ConfirmationModal 
+            isOpen={isConfirmModalOpen} 
+            onClose={handleCloseConfirmModal} 
+            onConfirm={handleConfirmDelete} 
+            title={confirmModalInfo.title}
+            message={confirmModalInfo.message}
+          />
+        </>
       );
+    };
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(
+      <React.StrictMode>
+        <App />
+      </React.StrictMode>
+    );
     </script>
   </body>
 </html>
