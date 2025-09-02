@@ -1767,6 +1767,19 @@
               if (age <= 14) return '26-28 Fr';
               return '28-32 Fr';
           }, [age]);
+          
+          const tidalVolume = useMemo(() => {
+              // Standard calculation is 6-8 ml/kg. Using 7 as a middle ground.
+              return (weight * 7).toFixed(0);
+          }, [weight]);
+
+          const respirationRate = useMemo(() => {
+              if (age < 1) return '30-60';   // Infant
+              if (age <= 3) return '24-40';  // Toddler
+              if (age <= 6) return '22-34';  // Preschooler
+              if (age <= 12) return '18-30'; // School-age
+              return '12-20';                // Adolescent
+          }, [age]);
 
           return (
               <div className="calculator-container">
@@ -1806,6 +1819,14 @@
                               <div className="airway-item">
                                   <span className="airway-item-label">Nasal Airway</span>
                                   <span className="airway-item-value">{nasalAirwaySize}</span>
+                              </div>
+                              <div className="airway-item">
+                                  <span className="airway-item-label">Tidal Volume (Vt)</span>
+                                  <span className="airway-item-value">{tidalVolume} ml</span>
+                              </div>
+                              <div className="airway-item">
+                                  <span className="airway-item-label">Respiration Rate</span>
+                                  <span className="airway-item-value">{respirationRate} /min</span>
                               </div>
                           </div>
                       </div>
