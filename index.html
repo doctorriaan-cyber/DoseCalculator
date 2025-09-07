@@ -965,6 +965,52 @@
           accent-color: var(--disabled-text-color);
       }
 
+      /* Footer Styles */
+      .main-footer-credit {
+        width: 100%;
+        max-width: 520px;
+        text-align: center;
+        margin-top: 2rem;
+        padding-bottom: 1rem;
+      }
+
+      .footer-divider {
+        border: none;
+        border-top: 1px solid var(--border-color);
+        margin-bottom: 1rem;
+      }
+
+      .main-footer-credit p {
+        color: var(--label-color);
+        font-size: 0.9rem;
+        font-weight: 500;
+      }
+
+      .import-example-button {
+          margin-top: 1rem;
+          padding: 0.6rem 1.2rem;
+          border: 1px solid var(--border-color);
+          background-color: transparent;
+          color: var(--label-color);
+          border-radius: 8px;
+          font-size: 0.9rem;
+          font-family: var(--font-family);
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s;
+      }
+
+      .import-example-button:hover:not(:disabled) {
+          border-color: var(--primary-color);
+          color: var(--primary-color);
+          background-color: color-mix(in srgb, var(--primary-color) 10%, transparent);
+      }
+
+      .import-example-button:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+      }
+
     </style>
   <script type="importmap">
 {
@@ -1531,6 +1577,7 @@
         const [itemToEdit, setItemToEdit] = useState(null);
         const [isImportModalOpen, setIsImportModalOpen] = useState(false);
         const [importedData, setImportedData] = useState(null);
+        const [isExampleLoading, setIsExampleLoading] = useState(false);
 
         // --- PERSISTENCE EFFECT ---
         useEffect(() => {
@@ -1905,6 +1952,31 @@
             setIsImportModalOpen(false);
             setImportedData(null);
             alert('Selected items imported successfully!');
+        };
+        
+        const handleImportExamples = async () => {
+            setIsExampleLoading(true);
+            try {
+                // Assuming the file is in the same directory when deployed.
+                const response = await fetch('riaandoses.json');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+
+                if (!data || !Array.isArray(data.sections)) {
+                    alert('Invalid file format. The example file must contain a "sections" array.');
+                    return;
+                }
+
+                setImportedData(data);
+                setIsImportModalOpen(true);
+            } catch (error) {
+                console.error("Error fetching example dosages:", error);
+                alert('Failed to load example dosages. Please check your internet connection or that the riaandoses.json file exists.');
+            } finally {
+                setIsExampleLoading(false);
+            }
         };
 
 
@@ -2332,6 +2404,17 @@
                 </div>
               </div>
             </div>
+            <footer className="main-footer-credit">
+                <hr className="footer-divider" />
+                <p>Made by Dr Riaan Combrinck</p>
+                <button
+                  className="import-example-button"
+                  onClick={handleImportExamples}
+                  disabled={isExampleLoading}
+                >
+                  {isExampleLoading ? 'Loading...' : 'Import example dosages'}
+                </button>
+            </footer>
           </div>
           <WeightModal isOpen={isWeightModalOpen} currentWeight={weight} onClose={() => setIsWeightModalOpen(false)} onSave={handleSaveWeight} />
           <AddSectionModal 
