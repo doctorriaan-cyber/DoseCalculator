@@ -912,6 +912,59 @@
           margin-left: 0.5rem;
           box-shadow: 0 0 0 1px var(--border-color);
       }
+      
+      /* Import Modal Styles */
+      .import-modal-body {
+          max-height: 60vh;
+          overflow-y: auto;
+          padding: 0.5rem 1rem;
+          margin: 0 -1rem;
+          background-color: var(--background-color);
+          border-top: 1px solid var(--border-color);
+          border-bottom: 1px solid var(--border-color);
+      }
+      .import-section {
+          margin-bottom: 1rem;
+      }
+      .import-section:last-child {
+          margin-bottom: 0;
+      }
+      .import-section-header, .import-item {
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+      }
+      .import-section-header {
+          font-weight: 600;
+          font-size: 1.1rem;
+      }
+      .import-item-list {
+          padding-left: 2rem;
+          display: flex;
+          flex-direction: column;
+          gap: 0.75rem;
+          margin-top: 0.75rem;
+      }
+      .import-section-header label, .import-item label {
+          cursor: pointer;
+      }
+      .import-section-header.disabled, .import-item.disabled {
+          color: var(--disabled-text-color);
+      }
+      .import-section-header.disabled label, .import-item.disabled label {
+          cursor: not-allowed;
+      }
+      .import-section-header input[type="checkbox"], .import-item input[type="checkbox"] {
+          width: 18px;
+          height: 18px;
+          accent-color: var(--primary-color);
+          cursor: pointer;
+      }
+      .import-section-header input[type="checkbox"]:disabled, .import-item input[type="checkbox"]:disabled {
+          cursor: not-allowed;
+          accent-color: var(--disabled-text-color);
+      }
+
     </style>
   <script type="importmap">
 {
@@ -1269,7 +1322,185 @@
                 </div>
             );
         };
+        
+        const ImportModal = ({ isOpen, onClose, onImport, data, existingSections }) => {
+            const [selection, setSelection] = useState({});
+            const sectionCheckboxRefs = useRef({});
 
+            const existingData = useMemo(() => {
+                const sectionNames = new Set();
+                const itemMap = new Map();
+                existingSections.forEach(section => {
+                    const sectionNameLower = section.name.toLowerCase().trim();
+                    sectionNames.add(sectionNameLower);
+                    const itemNames = new Set(section.items.map(item => item.name.toLowerCase().trim()));
+                    itemMap.set(sectionNameLower, itemNames);
+                });
+                return { sectionNames, itemMap };
+            }, [existingSections]);
+
+            useEffect(() => {
+                if (!data) return;
+
+                const newSelection = {};
+                data.sections.forEach(section => {
+                    const sectionNameLower = section.name.toLowerCase().trim();
+                    const sectionExists = existingData.sectionNames.has(sectionNameLower);
+                    const existingItemNames = existingData.itemMap.get(sectionNameLower) || new Set();
+
+                    const itemsSelection = {};
+                    const itemIsDisabled = {};
+                    let allItemsAreDisabled = section.items.length > 0;
+                    
+                    section.items.forEach(item => {
+                        const itemExists = existingItemNames.has(item.name.toLowerCase().trim());
+                        const isDisabled = sectionExists && itemExists;
+                        itemIsDisabled[item.name] = isDisabled;
+                        if (!isDisabled) allItemsAreDisabled = false;
+                        itemsSelection[item.name] = !isDisabled;
+                    });
+                    
+                    newSelection[section.name] = {
+                        checked: !allItemsAreDisabled,
+                        disabled: allItemsAreDisabled,
+                        items: itemsSelection,
+                        _itemIsDisabled: itemIsDisabled,
+                    };
+                });
+                setSelection(newSelection);
+            }, [data, existingData]);
+
+            useEffect(() => {
+              for (const sectionName in selection) {
+                const checkbox = sectionCheckboxRefs.current[sectionName];
+                if (checkbox) {
+                  const itemStates = [];
+                   for (const itemName in selection[sectionName].items) {
+                       if(!selection[sectionName]._itemIsDisabled[itemName]) {
+                           itemStates.push(selection[sectionName].items[itemName]);
+                       }
+                   }
+                  if(itemStates.length === 0) {
+                      checkbox.indeterminate = false;
+                      continue;
+                  };
+                  const allChecked = itemStates.every(Boolean);
+                  const noneChecked = itemStates.every(val => !val);
+                  checkbox.indeterminate = !allChecked && !noneChecked;
+                }
+              }
+            }, [selection]);
+
+            const handleSectionToggle = (sectionName) => {
+                setSelection(prev => {
+                    const newSelection = { ...prev };
+                    const section = newSelection[sectionName];
+                    const newCheckedState = !section.checked;
+                    section.checked = newCheckedState;
+                    for (const itemName in section.items) {
+                        if (!section._itemIsDisabled[itemName]) {
+                            section.items[itemName] = newCheckedState;
+                        }
+                    }
+                    return newSelection;
+                });
+            };
+
+            const handleItemToggle = (sectionName, itemName) => {
+                setSelection(prev => {
+                    const newSelection = { ...prev };
+                    const section = newSelection[sectionName];
+                    section.items[itemName] = !section.items[itemName];
+
+                    const itemStates = [];
+                    for (const iName in section.items) {
+                        if(!section._itemIsDisabled[iName]) {
+                           itemStates.push(section.items[iName]);
+                        }
+                    }
+                    if(itemStates.length > 0) {
+                        const allChecked = itemStates.every(Boolean);
+                        section.checked = allChecked;
+                    }
+                    return newSelection;
+                });
+            };
+
+            const handleImport = () => {
+                const dataToImport = {};
+                for (const sectionName in selection) {
+                    const sectionSelection = selection[sectionName];
+                    const originalSection = data.sections.find(s => s.name === sectionName);
+                    const selectedItems = [];
+                    for (const itemName in sectionSelection.items) {
+                        if (sectionSelection.items[itemName]) {
+                            const originalItem = originalSection.items.find(i => i.name === itemName);
+                            if(originalItem) selectedItems.push(originalItem);
+                        }
+                    }
+                    if (selectedItems.length > 0) {
+                        dataToImport[sectionName] = selectedItems;
+                    }
+                }
+                onImport(dataToImport);
+            };
+
+            if (!isOpen || !data) return null;
+
+            return (
+                <div className="modal-overlay" onClick={onClose}>
+                    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                        <h2>Import Data</h2>
+                        <p className="modal-message">Select sections and items to import. Existing entries are disabled.</p>
+                        <div className="import-modal-body">
+                            {data.sections.map(section => {
+                                const state = selection[section.name];
+                                if (!state) return null;
+                                return (
+                                    <div key={section.name} className="import-section">
+                                        <div className={`import-section-header ${state.disabled ? 'disabled' : ''}`}>
+                                            <input
+                                                type="checkbox"
+                                                id={`import-sec-${section.name}`}
+                                                checked={state.checked}
+                                                disabled={state.disabled}
+                                                onChange={() => handleSectionToggle(section.name)}
+                                                ref={el => (sectionCheckboxRefs.current[section.name] = el)}
+                                                aria-label={`Select section ${section.name}`}
+                                            />
+                                            <label htmlFor={`import-sec-${section.name}`}>{section.name}</label>
+                                        </div>
+                                        <div className="import-item-list">
+                                            {section.items.map(item => {
+                                                const isItemDisabled = state._itemIsDisabled[item.name];
+                                                const isChecked = state.items[item.name] || false;
+                                                return (
+                                                    <div key={item.name} className={`import-item ${isItemDisabled ? 'disabled' : ''}`}>
+                                                        <input
+                                                            type="checkbox"
+                                                            id={`import-item-${section.name}-${item.name}`}
+                                                            checked={isChecked}
+                                                            disabled={isItemDisabled}
+                                                            onChange={() => handleItemToggle(section.name, item.name)}
+                                                            aria-label={`Select item ${item.name}`}
+                                                        />
+                                                        <label htmlFor={`import-item-${section.name}-${item.name}`}>{item.name}</label>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                        <div className="modal-actions">
+                            <button className="modal-button" onClick={onClose}>Cancel</button>
+                            <button className="modal-button primary" onClick={handleImport}>Import Selected</button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
 
         // --- MAIN APP STATE ---
         const [mode, setMode] = useState(initialState.mode);
@@ -1298,6 +1529,8 @@
         const [itemToDelete, setItemToDelete] = useState(null);
         const [sectionToEdit, setSectionToEdit] = useState(null);
         const [itemToEdit, setItemToEdit] = useState(null);
+        const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+        const [importedData, setImportedData] = useState(null);
 
         // --- PERSISTENCE EFFECT ---
         useEffect(() => {
@@ -1608,24 +1841,15 @@
             reader.onload = (e) => {
                 try {
                     const result = e.target.result;
-                    const importedData = JSON.parse(result);
+                    const imported = JSON.parse(result);
                     
-                    if (!importedData || !Array.isArray(importedData.sections)) {
+                    if (!imported || !Array.isArray(imported.sections)) {
                         alert('Invalid file format. The file must contain a "sections" array.');
                         return;
                     }
 
-                    const newSections = importedData.sections.map(section => ({
-                        ...section,
-                        id: Date.now() + Math.random(),
-                        items: section.items?.map(item => ({
-                            ...item,
-                            id: Date.now() + Math.random(),
-                        })) || []
-                    }));
-
-                    setSections(prevSections => [...prevSections, ...newSections]);
-                    alert('Data imported successfully!');
+                    setImportedData(imported);
+                    setIsImportModalOpen(true);
 
                 } catch (error) {
                     console.error("Error parsing imported file:", error);
@@ -1641,6 +1865,48 @@
             };
             reader.readAsText(file);
         };
+        
+        const handleConfirmImport = (selectedData) => {
+            setSections(prevSections => {
+                const newSectionsState = JSON.parse(JSON.stringify(prevSections)); // Deep copy
+                const existingSectionNamesMap = new Map(newSectionsState.map(s => [s.name.toLowerCase().trim(), s]));
+
+                for (const sectionName in selectedData) {
+                    const itemsToImport = selectedData[sectionName];
+                    if (itemsToImport.length === 0) continue;
+                    
+                    const sectionNameLower = sectionName.toLowerCase().trim();
+                    const existingSection = existingSectionNamesMap.get(sectionNameLower);
+
+                    if (existingSection) {
+                        const newItems = itemsToImport.map(item => ({
+                            ...item,
+                            id: Date.now() + Math.random(),
+                            isFavourite: item.isFavourite || false,
+                        }));
+                        existingSection.items.push(...newItems);
+                    } else {
+                        const newSection = {
+                            id: Date.now() + Math.random(),
+                            name: sectionName,
+                            isOpen: true,
+                            items: itemsToImport.map(item => ({
+                                ...item,
+                                id: Date.now() + Math.random(),
+                                isFavourite: item.isFavourite || false,
+                            }))
+                        };
+                        newSectionsState.push(newSection);
+                    }
+                }
+                return newSectionsState;
+            });
+            
+            setIsImportModalOpen(false);
+            setImportedData(null);
+            alert('Selected items imported successfully!');
+        };
+
 
         const renderItem = (item, sectionId, index, totalItems) => {
           const minDose = weight * item.minRange;
@@ -2086,6 +2352,13 @@
             onConfirm={handleConfirmDelete} 
             title={confirmModalInfo.title}
             message={confirmModalInfo.message}
+          />
+          <ImportModal
+            isOpen={isImportModalOpen}
+            onClose={() => { setIsImportModalOpen(false); setImportedData(null); }}
+            onImport={handleConfirmImport}
+            data={importedData}
+            existingSections={sections}
           />
         </>
       );
