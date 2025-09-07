@@ -1,0 +1,144 @@
+{
+  "sections": [
+    {
+      "id": 1756569717097,
+      "name": "Miscellaneous",
+      "isOpen": false,
+      "items": [
+        {
+          "name": "Lignocaine",
+          "minRange": 1,
+          "maxRange": 2,
+          "unit": "mg/kg",
+          "id": 1756569750972,
+          "isFavourite": true
+        },
+        {
+          "name": "Dexametozone",
+          "minRange": 0.15,
+          "maxRange": 0.15,
+          "unit": "mg/kg",
+          "id": 1756569767280,
+          "isFavourite": false
+        },
+        {
+          "name": "Dexmedetomidine",
+          "minRange": 0.5,
+          "maxRange": 0.5,
+          "unit": "µg/kg",
+          "id": 1756570054020,
+          "isFavourite": true
+        }
+      ]
+    },
+    {
+      "id": 1756560947582,
+      "name": "Induction agents",
+      "isOpen": false,
+      "items": [
+        {
+          "name": "Propofol",
+          "minRange": 2,
+          "maxRange": 4,
+          "unit": "mg/kg",
+          "id": 1756560975351,
+          "isFavourite": true
+        },
+        {
+          "name": "Etomidate",
+          "minRange": 0.3,
+          "maxRange": 0.3,
+          "unit": "mg/kg",
+          "id": 1756569691073,
+          "isFavourite": false
+        }
+      ]
+    },
+    {
+      "id": 1756569787184,
+      "name": "Analgesia",
+      "isOpen": false,
+      "items": [
+        {
+          "name": "Fentanyl",
+          "minRange": 1,
+          "maxRange": 2,
+          "unit": "mg/kg",
+          "id": 1756569798221,
+          "isFavourite": false
+        },
+        {
+          "name": "Morphine",
+          "minRange": 0.1,
+          "maxRange": 0.15,
+          "unit": "mg/kg",
+          "id": 1756569811951,
+          "isFavourite": false
+        },
+        {
+          "name": "Perfalgan",
+          "minRange": 15,
+          "maxRange": 15,
+          "unit": "mg/kg",
+          "id": 1756569825691,
+          "isFavourite": true
+        },
+        {
+          "name": "Paracetamol PR",
+          "minRange": 20,
+          "maxRange": 20,
+          "unit": "mg/kg",
+          "id": 1756569836669,
+          "isFavourite": false
+        },
+        {
+          "name": "Diclofenac PR",
+          "minRange": 1,
+          "maxRange": 1,
+          "unit": "mg/kg",
+          "id": 1756569859998,
+          "isFavourite": true
+        }
+      ]
+    },
+    {
+      "id": 1756569876325,
+      "name": "Antibiotics",
+      "isOpen": false,
+      "items": [
+        {
+          "name": "Kefzol",
+          "minRange": 50,
+          "maxRange": 50,
+          "unit": "mg/kg",
+          "id": 1756569885854,
+          "isFavourite": true
+        },
+        {
+          "name": "Augmentin",
+          "minRange": 30,
+          "maxRange": 30,
+          "unit": "mg/kg",
+          "id": 1756569901858,
+          "isFavourite": false
+        },
+        {
+          "name": "Gentamicin",
+          "minRange": 5,
+          "maxRange": 5,
+          "unit": "mg/kg",
+          "id": 1756569918214,
+          "isFavourite": false
+        },
+        {
+          "name": "Metronidazole",
+          "minRange": 7.5,
+          "maxRange": 7.5,
+          "unit": "mg/kg",
+          "id": 1756569927580,
+          "isFavourite": false
+        }
+      ]
+    }
+  ]
+}
